@@ -2,6 +2,7 @@ import express from 'express'
 import dotenv from 'dotenv'
 import { connectDB } from './config/db'
 import facultyRoutes from './routes/facultyRoutes'
+import adminRoutes from './routes/adminRoutes'
 
 dotenv.config()
 
@@ -11,7 +12,10 @@ const app = express()
 
 app.use(express.json())
 
-// Routes
-app.use('/api/faculties', facultyRoutes)
+// Rutas públicas
+app.use('/api/faculties', facultyRoutes);
+
+// Rutas administrativas (login y operaciones protegidas)
+app.use('/api/admin', adminRoutes);
 
 export default app
