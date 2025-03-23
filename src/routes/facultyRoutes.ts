@@ -53,10 +53,10 @@ router.get('/:facultyId/professors/:professorId',
   ProfessorController.getProfessorById
 );
 
-// Crear un profesor (disponible para usuarios públicos)
-// Se asume que se debe asignar a una materia, por ello se requiere facultyId y subjectId en la URL.
-router.post('/:facultyId/subjects/:subjectId/professors',
-  param('subjectId').isMongoId().withMessage('ID de materia inválido'),
+// Crear un profesor desde formulario (subject se envía en el body)
+router.post('/:facultyId/professors',
+  // Validamos que en el body venga un subject válido
+  body('subject').isMongoId().withMessage('ID de materia inválido'),
   body('name').notEmpty().withMessage('El nombre del profesor es obligatorio'),
   body('department').notEmpty().withMessage('El departamento es obligatorio'),
   body('biography').notEmpty().withMessage('La biografía es obligatoria'),
@@ -70,7 +70,6 @@ router.get('/:facultyId/professors/:professorId/ratings', RatingController.getPr
 router.post('/:facultyId/professors/:professorId/ratings', 
   body('general').isFloat({ min: 1, max: 5 }).withMessage('La calificación general debe estar entre 1 y 5'),
   body('subject').isMongoId().withMessage('El ID de la materia es inválido'),
-  // Agregar validaciones para: explanation, accessibility, difficulty, attendance, comment, etc.
   handleInputErrors,
   RatingController.createRating
 );

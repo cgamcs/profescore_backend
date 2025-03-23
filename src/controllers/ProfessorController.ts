@@ -6,10 +6,16 @@ import Rating from '../models/Rating';
 export class ProfessorController {
     static createProfessor = async (req: Request, res: Response) => {
         try {
-            // Obtener entidades validadas por el middleware
-            const faculty = req.faculty; // Facultad validada
-            const subject = req.subject; // Materia validada
-            const { name, department, biography } = req.body;
+            // Se asume que ya se tiene la facultad validada en req.faculty mediante middleware
+            const faculty = req.faculty;
+            const { name, department, biography, subject: subjectId } = req.body;
+
+            // Buscar la materia usando el ID enviado en el body
+            const subject = await Subject.findById(subjectId);
+            if (!subject) {
+                res.status(404).json({ error: 'Materia no encontrada' })
+                return 
+            }
 
             // Verificar si el profesor ya existe en la facultad
             const existingProfessor = await Professor.findOne({
@@ -27,17 +33,16 @@ export class ProfessorController {
                     await existingProfessor.save();
                 }
 
-                // Actualizar materia si no tiene el profesor
+                // Actualizar la materia para que incluya al profesor si aún no lo tiene
                 const professorIdStr = existingProfessor.id.toString();
                 const subjectProfessors = subject.professors.map(id => id.toString());
-                
                 if (!subjectProfessors.includes(professorIdStr)) {
                     subject.professors.push(existingProfessor.id);
                     await subject.save();
                 }
-                
-                res.status(201).send('Profesor creado correctamente');
-                return
+
+                res.status(201).send('Profesor creado correctamente')
+                return 
             }
 
             // Crear nuevo profesor si no existe
@@ -89,7 +94,7 @@ export class ProfessorController {
         try {
             // Evitar duplicados
             if (req.body.name) {
-                const existing = await Professor.findOne({ 
+                const existing = await Professor.findOne({
                     name: req.body.name.trim(),
                     faculty: req.professor.faculty,
                     _id: { $ne: req.professor }
@@ -117,7 +122,7 @@ export class ProfessorController {
             await Promise.allSettled([
                 req.professor.deleteOne(), // Elimina al profesor
                 Rating.deleteMany({ professor: req.professor.id }), // Elimina las calificaciones asociadas al profesor
-                Subject.updateMany({professors: req.professor.id}, {$pull: {professors: req.professor.id} }) // Elimina la referencia del profesor en las materias
+                Subject.updateMany({ professors: req.professor.id }, { $pull: { professors: req.professor.id } }) // Elimina la referencia del profesor en las materias
             ])
 
             res.send('Profesor eliminado correctamente')

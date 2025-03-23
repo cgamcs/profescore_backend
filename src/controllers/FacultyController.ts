@@ -32,6 +32,7 @@ export class FacultyController {
     static getFacultyById = async (req: Request, res: Response) => {
         try {
             res.json(req.faculty)
+            console.log(req.faculty)
         } catch (error) {
             console.log( colors.red.bold(`Error al mostrar facultad - ${error.message}`) )
         }

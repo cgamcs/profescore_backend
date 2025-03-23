@@ -7,6 +7,9 @@ import { adminAuth } from '../middleware/adminAuth';
 import { FacultyController } from '../controllers/FacultyController';
 import { SubjectController } from '../controllers/SubjectController';
 import { ProfessorController } from '../controllers/ProfessorController';
+import { facultyExists } from '../middleware/faculty';
+import { subjectBelongsToFaculty, subjectExists } from '../middleware/subject';
+import { professorExists } from '../middleware/professor';
 
 const router = Router();
 
@@ -42,6 +45,9 @@ router.post('/faculty',
 
 // Obtener todas las facultades
 router.get('/faculty', FacultyController.getAllFacultys);
+
+// Revisae si el ID de la Facultad existe antes de procesar las rutas
+router.param('facultyId', facultyExists)
 
 // Obtener facultad por id
 router.get('/faculty/:facultyId',
@@ -80,6 +86,10 @@ router.post('/faculty/:facultyId/subject',
 // Obtener todas las materias de una facultad
 router.get('/faculty/:facultyId/subject', SubjectController.getFacultySubjects);
 
+// Middlewares para validar Materias
+router.param('subjectId', subjectExists); // Verificar si la Materia existe
+router.param('subjectId', subjectBelongsToFaculty); // Verificar que la Materia pertenezca a la Facultad
+
 // Obtener materia por id
 router.get('/faculty/:facultyId/subject/:subjectId',
     param('subjectId').isMongoId().withMessage('ID no válido'),
@@ -105,8 +115,9 @@ router.delete('/faculty/:facultyId/subject/:subjectId',
 
 // **** PROFESORES ****
 
-// Crear un profesor asociado a una materia
-router.post('/faculty/:facultyId/subject/:subjectId/professor',
+// Crear un profesor, con subject enviado en el body
+router.post('/faculty/:facultyId/professor',
+    body('subject').isMongoId().withMessage('ID de materia inválido'),
     body('name').notEmpty().withMessage('El nombre del profesor es obligatorio'),
     body('department').notEmpty().withMessage('El departamento es obligatorio'),
     body('biography').notEmpty().withMessage('La biografía es obligatoria'),
@@ -116,6 +127,9 @@ router.post('/faculty/:facultyId/subject/:subjectId/professor',
 
 // Obtener todos los profesores de una facultad
 router.get('/faculty/:facultyId/professor', ProfessorController.getFacultyProfessors);
+
+// Revisar si el ID del Profesor existe antes de procesar las rutas
+router.param('professorId', professorExists);
 
 // Obtener profesor por id
 router.get('/faculty/:facultyId/professor/:professorId',
