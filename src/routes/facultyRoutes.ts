@@ -17,7 +17,7 @@ const router = Router();
 router.param('facultyId', facultyExists);
 
 // Obtener todas las facultades
-router.get('/', FacultyController.getAllFacultys);
+router.get('/', FacultyController.getHomeData);
 
 // Obtener una facultad por id
 router.get('/:facultyId',
@@ -25,6 +25,9 @@ router.get('/:facultyId',
   handleInputErrors,
   FacultyController.getFacultyById
 );
+
+// Obtener departamentos de una facultad
+router.get('/:facultyId/departments', FacultyController.getFacultyDepartments);
 
 // --- Rutas de Materias (solo consulta) ---
 router.get('/:facultyId/subjects', SubjectController.getFacultySubjects);
@@ -38,6 +41,12 @@ router.get('/:facultyId/subjects/:subjectId',
   param('subjectId').isMongoId().withMessage('ID no válido'),
   handleInputErrors,
   SubjectController.getSubjectById
+);
+
+// Obtener profesores por materia
+router.get(
+  '/:facultyId/subjects/:subjectId/professors',
+  SubjectController.getSubjectProfessors
 );
 
 // --- Rutas de Profesores ---
@@ -76,9 +85,12 @@ router.post('/:facultyId/professors/:professorId/ratings',
 
 // Votar en una calificación (like/dislike)
 router.param('ratingId', ratingExists);
+
 router.post('/:facultyId/professors/:professorId/ratings/:ratingId/vote',
+  param('ratingId').isMongoId(),
   handleInputErrors,
-  ratingBelongsToProfessor,
+  ratingExists, // <-- Carga la calificación
+  ratingBelongsToProfessor, // <-- Verifica pertenencia
   RatingController.voteHelpful
 );
 

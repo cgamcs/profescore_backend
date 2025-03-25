@@ -1,36 +1,43 @@
 import { Request, Response } from 'express';
 import Rating from '../models/Rating';
 import Professor from '../models/Professor';
+import Subject from '../models/Subject';
 import mongoose from 'mongoose';
 
 export class RatingController {
     // Crear calificación
-    static createRating = async (req: Request, res: Response) => {
+    static createRating = async (req, res) => {
         try {
-            const { professorId } = req.params;
-            const { 
-                subject,
-                general,
-                explanation,
-                accessibility,
-                difficulty,
-                attendance,
-                wouldRetake,
-                comment,
-                // userId 
-            } = req.body;
+            console.log('Datos recibidos en el backend:', req.body);
+            console.log('Params:', req.params);
 
-            // Validar que el profesor existe
-            const professor = await Professor.findById(professorId);
-            if (!professor) {
-                res.status(404).json({ error: 'Profesor no encontrado' })
-                return
+            // Verificar que todos los campos necesarios estén presentes
+            const { general, explanation, accessibility, difficulty, attendance, wouldRetake, comment, subject, userIdentifier } = req.body;
+            const { facultyId, professorId } = req.params;
+
+            if (!subject || !professorId || !userIdentifier) {
+                res.status(400).json({ error: 'Faltan campos obligatorios' });
+                return 
             }
 
-            // Crear calificación
-            const newRating = await Rating.create({
-                professor: professorId,
-                subject,
+            // Actualizar relación profesor-materia
+            const [professor, subjectDoc] = await Promise.all([
+                Professor.findById(professorId),
+                Subject.findById(subject)
+            ]);
+
+            if (!professor || !subjectDoc) {
+                return res.status(404).json({ error: 'Profesor o materia no encontrados' });
+            }
+    
+            // Agregar materia si no existe
+            if (!professor.subjects.includes(subject)) {
+                professor.subjects.push(subject);
+                await professor.save();
+            }
+
+            // Crear la calificación
+            const newRating = new Rating({
                 general,
                 explanation,
                 accessibility,
@@ -38,15 +45,25 @@ export class RatingController {
                 attendance,
                 wouldRetake,
                 comment,
-                // user: userId
+                subject,
+                professor: professorId,
+                userIdentifier
             });
 
-            // Actualizar estadísticas del profesor
+            // Guardar en la base de datos
+            const savedRating = await newRating.save();
+            console.log('Calificación guardada:', savedRating);
+            
+            // Actualizar estadisticas
             await this.updateProfessorStats(professorId);
 
-            res.status(201).json(newRating);
+            return res.status(201).json(savedRating);
         } catch (error) {
-            res.status(500).json({ error: 'Error al crear calificación' });
+            console.error('Error al crear calificación:', error);
+            return res.status(500).json({
+                error: 'Error al crear la calificación',
+                details: error.message
+            });
         }
     }
 
@@ -70,11 +87,13 @@ export class RatingController {
         try {
             const { type } = req.body; // 1 = like, 0 = dislike
             const userIP = req.ip; // Obtener IP del cliente
+            const { ratingId } = req.params;
     
-            if(!req.rating) {
-                res.status(404).json({ error: 'Calificación no encontrada' })
-                return 
-            }
+            const rating = await Rating.findById(ratingId); // <-- Buscar calificación
+            if (!rating) {
+                res.status(404).json({ error: 'Calificación no encontrada' });
+                return
+            }  
     
             // Verificar voto previo
             const hasLiked = req.rating.likes.includes(userIP);
@@ -106,10 +125,10 @@ export class RatingController {
             }
     
             const updatedRating = await Rating.findByIdAndUpdate(
-                req.rating,
+                ratingId,
                 updateQuery,
                 { new: true }
-            );
+            ).populate('subject', 'name');
     
             res.json(updatedRating);
         } catch (error) {

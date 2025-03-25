@@ -12,6 +12,7 @@ export interface IRating extends Document {
     subject: Types.ObjectId
     likes: string[]  // Almacenará IPs de likes
     dislikes: string[] // Almacenará IPs de dislikes
+    userIdentifier: string
     createdAt: Date
 }
 
@@ -71,6 +72,11 @@ const RatingSchema: Schema = new Schema({
     likes: {
         type: [String],
         default: [] // Inicializar array vacío
+    },
+    userIdentifier: {
+        type: String,
+        required: true,
+        index: true
     },
     dislikes: {
         type: [String],

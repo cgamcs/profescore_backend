@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+import { Types } from 'mongoose';
 import Professor from '../models/Professor';
 import Subject from '../models/Subject';
 import Rating from '../models/Rating';
@@ -92,26 +93,73 @@ export class ProfessorController {
 
     static updateProfessor = async (req: Request, res: Response) => {
         try {
+            const professor = req.professor;
+            const { subject: newSubjects, ...rest } = req.body;
+
+            let newSubjectIds: Types.ObjectId[] = [];
+
             // Evitar duplicados
-            if (req.body.name) {
+            if (rest.name) {
                 const existing = await Professor.findOne({
-                    name: req.body.name.trim(),
-                    faculty: req.professor.faculty,
-                    _id: { $ne: req.professor }
+                    name: rest.name.trim(),
+                    faculty: professor.faculty,
+                    _id: { $ne: professor.id }
                 });
+                
                 if (existing) {
                     res.status(400).json({ error: 'Ya existe un profesor con este nombre' })
-                    return
+                    return 
                 }
             }
 
             // Actualizar
-            Object.assign(req.professor, req.body)
+            Object.assign(professor, rest)
 
-            await req.professor.save()
+            // Agregar nuevas materias
+            if (newSubjects && Array.isArray(newSubjects)) {
+                console.log("Materias recibidas:", newSubjects);
+    
+                // Validar que todos sean ObjectId válidos
+                const validSubjects = newSubjects
+                    .map(id => id.toString().trim())
+                    .filter(id => Types.ObjectId.isValid(id))
+                    .map(id => new Types.ObjectId(id))
 
-            res.send('Profesor actualizadao correctamente')
+                if (validSubjects.length !== newSubjects.length) {
+                    res.status(400).json({ error: "Algunos IDs de materias son inválidos" })
+                    return 
+                }
+
+                console.log("Nuevos IDs de materias:", validSubjects);
+    
+                // Evitar duplicados antes de agregar nuevas materias
+                const existingSubjectIds = professor.subjects.map(id => id.toString());
+
+                validSubjects.forEach(id => {
+                    if (!existingSubjectIds.includes(id.toString())) {
+                        professor.subjects.push(id); // Solo agregar si no está ya en la lista
+                    }
+                });
+
+                console.log("Materias finales del profesor:", professor.subjects);
+            }
+    
+            await professor.save(); // Guardar cambios en el profesor
+    
+            // Actualizar relaciones en las materias nuevas
+            if (newSubjectIds.length > 0) {
+                await Subject.updateMany(
+                    { _id: { $in: newSubjectIds } },
+                    { $addToSet: { professors: professor._id } }
+                );
+            }
+
+            res.json({
+                message: 'Profesor creado y asignado a la materia',
+                professor: req.professor
+            });
         } catch (error) {
+            console.log(error)
             res.status(500).json({ error: 'Hubo un error al actualizar el profesor' })
         }
     }

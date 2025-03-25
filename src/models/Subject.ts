@@ -1,13 +1,14 @@
 import mongoose, { Schema, Document, PopulatedDoc, Types } from 'mongoose';
-import { IProfessor } from './Professor'
+import { IProfessor } from './Professor';
+import { IDepartment } from './Department';
 
 export interface ISubject extends Document {
-    name: string
-    department: string
-    credits: number
-    description?: string // Opcional
-    faculty: Types.ObjectId // Referencias a facultad
-    professors: PopulatedDoc<IProfessor & Document>[]
+    name: string;
+    credits: number;
+    description?: string; // Opcional
+    department: PopulatedDoc<IDepartment & Document>;
+    faculty: Types.ObjectId; // Referencias a facultad
+    professors: PopulatedDoc<IProfessor & Document>[];
 }
 
 const SubjectSchema: Schema = new Schema({
@@ -16,10 +17,6 @@ const SubjectSchema: Schema = new Schema({
         required: [true, 'El nombre de la materia es obligatorio'],
         unique: false,
         trim: true
-    },
-    department: {
-        type: String,
-        required: [true, 'El departamento es obligatorio']
     },
     credits: {
         type: Number,
@@ -30,6 +27,11 @@ const SubjectSchema: Schema = new Schema({
     description: {
         type: String,
         maxlength: [500, 'La descripción no puede exceder 500 caracteres']
+    },
+    department: {
+        type: Types.ObjectId,
+        ref: 'Department',
+        required: true
     },
     faculty: {
         type: Types.ObjectId,
@@ -42,16 +44,16 @@ const SubjectSchema: Schema = new Schema({
             ref: 'Professor'
         }
     ]
-}, { timestamps: true })
+}, { timestamps: true });
 
 SubjectSchema.index(
-    { name: 1, faculty: 1 }, 
-    { 
-        unique: true, 
+    { name: 1, faculty: 1 },
+    {
+        unique: true,
         name: "unique_subject_per_faculty",
         partialFilterExpression: { faculty: { $exists: true } }
     }
 );
 
-const Subject = mongoose.model<ISubject>('Subject', SubjectSchema)
-export default Subject
+const Subject = mongoose.model<ISubject>('Subject', SubjectSchema);
+export default Subject;

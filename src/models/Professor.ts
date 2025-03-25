@@ -1,11 +1,12 @@
-import mongoose, { Schema, Document, Types } from 'mongoose';
+import mongoose, { Schema, PopulatedDoc, Document, Types } from 'mongoose';
+import { IDepartment } from './Department';
 
 export interface IProfessor extends Document {
-    name: string
-    department: string
-    biography: string
-    faculty: Types.ObjectId // Referencias a facultad
-    subjects: Types.ObjectId[] // Referencias a materia
+    name: string;
+    biography: string;
+    department: PopulatedDoc<IDepartment & Document>;
+    faculty: Types.ObjectId; // Referencias a facultad
+    subjects: Types.ObjectId[]; // Referencias a materia
     ratingStats: {
         totalRatings: number;
         averageGeneral: number;
@@ -18,18 +19,19 @@ export interface IProfessor extends Document {
 }
 
 const ProfessorSchema: Schema = new Schema({
-    name: { 
+    name: {
         type: String,
         required: true,
         trim: true
     },
-    department: {
-        type: String,
-        required: [true, 'El departamento es obligatorio']
-    },
     biography: {
         type: String,
         maxlength: [500, 'La descripción no puede exceder 500 caracteres']
+    },
+    department: {
+        type: Types.ObjectId,
+        ref: 'Department',
+        required: true
     },
     faculty: {
         type: Types.ObjectId,
@@ -37,7 +39,7 @@ const ProfessorSchema: Schema = new Schema({
         required: true
     },
     subjects: [
-        { 
+        {
             type: Types.ObjectId,
             ref: 'Subject',
             required: true
@@ -52,13 +54,13 @@ const ProfessorSchema: Schema = new Schema({
         averageAttendance: { type: Number, default: 0 },
         wouldRetakePercentage: { type: Number, default: 0 }
     }
-}, { timestamps: true })
+}, { timestamps: true });
 
 // Índice compuesto para evitar duplicados en la misma facultad
 ProfessorSchema.index(
     { name: 1, faculty: 1 },
     { unique: true, name: "unique_professor_per_faculty" }
-)
+);
 
-const Professor = mongoose.model<IProfessor>('Professor', ProfessorSchema)
-export default Professor
+const Professor = mongoose.model<IProfessor>('Professor', ProfessorSchema);
+export default Professor;

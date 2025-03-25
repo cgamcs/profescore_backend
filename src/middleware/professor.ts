@@ -19,6 +19,9 @@ export async function professorExists( req: Request, res: Response, next: NextFu
         }
 
         const professor = await Professor.findById(professorId)
+            .populate('subjects')
+            .populate('department', 'name')
+
         if(!professor) {
             const error = new Error('Profesor no encontrado')
             

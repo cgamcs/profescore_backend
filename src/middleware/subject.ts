@@ -13,6 +13,8 @@ export async function subjectExists( req: Request, res: Response, next: NextFunc
     try {
         const { subjectId } = req.params
         const subject = await Subject.findById(subjectId)
+            .populate('professors') 
+            .populate('department', 'name')
 
         if(!subject) {
             const error = new Error('Materia no encontrada')
@@ -21,7 +23,10 @@ export async function subjectExists( req: Request, res: Response, next: NextFunc
             return
         }
 
-        req.subject = subject
+        req.subject = {
+            ...(subject.toObject() as any),
+            professorsCount: subject.professors.length
+        };
 
         next()
     } catch (error) {

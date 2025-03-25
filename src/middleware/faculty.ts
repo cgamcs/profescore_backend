@@ -4,7 +4,13 @@ import Faculty, { IFaculty } from '../models/Faculty';
 export async function facultyExists( req: Request, res: Response, next: NextFunction ) {
     try {
         const { facultyId } = req.params
-        const faculty = await Faculty.findById(facultyId).populate('subjects')
+        const faculty = await Faculty.findById(facultyId)
+            .populate('subjects')
+            .populate({
+                path: 'departments',
+                model: 'Department',
+                select: 'name'
+            })
 
         if(!faculty) {
             const error = new Error('Facultad no encontrada')

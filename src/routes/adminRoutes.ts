@@ -10,6 +10,7 @@ import { ProfessorController } from '../controllers/ProfessorController';
 import { facultyExists } from '../middleware/faculty';
 import { subjectBelongsToFaculty, subjectExists } from '../middleware/subject';
 import { professorExists } from '../middleware/professor';
+import { DashboardController } from '../controllers/DashboardController';
 
 const router = Router();
 
@@ -33,6 +34,12 @@ router.post('/login',
 // --- Rutas administrativas (protegidas) ---
 router.use(adminAuth);
 
+// Get dashboard statistics
+router.get('/dashboard-stats', DashboardController.getDashboardStats);
+
+// Get recent activities
+router.get('/recent-activities', DashboardController.getRecentActivities);
+
 // **** FACULTADES ****
 
 // Crear una nueva facultad
@@ -44,7 +51,7 @@ router.post('/faculty',
 );
 
 // Obtener todas las facultades
-router.get('/faculty', FacultyController.getAllFacultys);
+router.get('/faculty', FacultyController.getAllFaculties);
 
 // Revisae si el ID de la Facultad existe antes de procesar las rutas
 router.param('facultyId', facultyExists)
@@ -62,7 +69,7 @@ router.put('/faculty/:facultyId',
     body('name').notEmpty().withMessage('El nombre de la facultad es obligatorio'),
     body('abbreviation').notEmpty().withMessage('La abreviación de la facultad es obligatoria'),
     handleInputErrors,
-    FacultyController.updateFaculty
+    FacultyController.editFaculty
 );
 
 // Eliminar facultad
@@ -70,6 +77,13 @@ router.delete('/faculty/:facultyId',
     param('facultyId').isMongoId().withMessage('ID no válido'),
     handleInputErrors,
     FacultyController.deleteFaculty
+);
+
+// Crear un departamento
+router.post('/faculty/:facultyId/departments',
+    body('name').notEmpty().withMessage('El nombre es obligatorio'),
+    handleInputErrors,
+    FacultyController.addDepartment
 );
 
 // **** MATERIAS ****
