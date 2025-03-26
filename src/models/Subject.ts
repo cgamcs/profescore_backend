@@ -1,13 +1,14 @@
 import mongoose, { Schema, Document, PopulatedDoc, Types } from 'mongoose';
 import { IProfessor } from './Professor';
 import { IDepartment } from './Department';
+import { IFaculty } from './Faculty';
 
 export interface ISubject extends Document {
     name: string;
     credits: number;
     description?: string; // Opcional
     department: PopulatedDoc<IDepartment & Document>;
-    faculty: Types.ObjectId; // Referencias a facultad
+    faculty: PopulatedDoc<IFaculty & Document>; // Referencias a facultad
     professors: PopulatedDoc<IProfessor & Document>[];
 }
 

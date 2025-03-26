@@ -18,7 +18,6 @@ export class FacultyController {
     static createFaculty = async (req: Request, res: Response) => {
         try {
             const { name, abbreviation, departments } = req.body; // departments: array de nombres
-
             // 1. Crear la facultad
             const faculty = new Faculty({ name, abbreviation });
 
@@ -215,7 +214,7 @@ export class FacultyController {
 
     static getFacultyDepartments = async (req: Request, res: Response) => {
         try {
-            const faculty = await Faculty.findById(req.params.facultyId).select('departments');
+            const faculty = await Faculty.findById(req.params.facultyId).populate('departments');
             res.json(faculty?.departments || []);
         } catch (error) {
             res.status(500).json({ error: 'Error fetching departments' });

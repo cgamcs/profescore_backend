@@ -1,4 +1,3 @@
-// adminRoutes.ts
 import { Router } from 'express';
 import { body, param } from 'express-validator';
 import { handleInputErrors } from '../middleware/validation';
@@ -53,8 +52,8 @@ router.post('/faculty',
 // Obtener todas las facultades
 router.get('/faculty', FacultyController.getAllFaculties);
 
-// Revisae si el ID de la Facultad existe antes de procesar las rutas
-router.param('facultyId', facultyExists)
+// Revisar si el ID de la Facultad existe antes de procesar las rutas
+router.param('facultyId', facultyExists);
 
 // Obtener facultad por id
 router.get('/faculty/:facultyId',
@@ -62,6 +61,8 @@ router.get('/faculty/:facultyId',
     handleInputErrors,
     FacultyController.getFacultyById
 );
+
+router.get('/faculty/:facultyId/departments', FacultyController.getFacultyDepartments);
 
 // Actualizar facultad
 router.put('/faculty/:facultyId',
@@ -86,19 +87,15 @@ router.post('/faculty/:facultyId/departments',
     FacultyController.addDepartment
 );
 
-// **** MATERIAS ****
+// Obtener todas las materias de todas las facultades
+router.get('/subjects', SubjectController.getAllSubjects);
 
-// Crear una nueva materia asociada a una facultad
+// Crear una materia
 router.post('/faculty/:facultyId/subject',
-    body('name').notEmpty().withMessage('El nombre de la materia es obligatorio'),
-    body('department').notEmpty().withMessage('El departamento de la materia es obligatorio'),
-    body('credits').isNumeric().withMessage('Los créditos deben ser un número'),
+    body('name').notEmpty().withMessage('El nombre es obligatorio'),
     handleInputErrors,
     SubjectController.createSubject
 );
-
-// Obtener todas las materias de una facultad
-router.get('/faculty/:facultyId/subject', SubjectController.getFacultySubjects);
 
 // Middlewares para validar Materias
 router.param('subjectId', subjectExists); // Verificar si la Materia existe
