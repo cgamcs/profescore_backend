@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import axios from 'axios';
 
-const RECAPTCHA_SECRET_KEY = '6LeyFQErAAAAAL4Zpk-WjPXb4CMF0rpBC5kctkcG'; // Reemplaza con tu secret key
+const RECAPTCHA_SECRET_KEY = process.env.SECRET_KEY; // Reemplaza con tu secret key
 
 export const verifyRecaptcha = async (req: Request, res: Response, next: NextFunction) => {
   const { captcha } = req.body;
