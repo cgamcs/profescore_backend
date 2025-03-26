@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { Types } from 'mongoose';
+import Faculty from '../models/Faculty';
 import Professor from '../models/Professor';
 import Subject from '../models/Subject';
 import Rating from '../models/Rating';
@@ -7,34 +8,28 @@ import Rating from '../models/Rating';
 export class ProfessorController {
     static createProfessor = async (req: Request, res: Response) => {
         try {
-            // Se asume que ya se tiene la facultad validada en req.faculty mediante middleware
             const faculty = req.faculty;
             const { name, department, biography, subject: subjectId } = req.body;
 
-            // Buscar la materia usando el ID enviado en el body
             const subject = await Subject.findById(subjectId);
             if (!subject) {
-                res.status(404).json({ error: 'Materia no encontrada' })
-                return 
+                res.status(404).json({ error: 'Materia no encontrada' });
+                return;
             }
 
-            // Verificar si el profesor ya existe en la facultad
             const existingProfessor = await Professor.findOne({
                 name: name.trim(),
                 faculty: faculty.id
             });
 
             if (existingProfessor) {
-                // Convertir ObjectIds a strings para comparación
                 const subjectIdStr = subject.id.toString();
                 const existingSubjects = existingProfessor.subjects.map(id => id.toString());
-                // Si ya existe, agregar la materia si no está asignada
                 if (!existingSubjects.includes(subjectIdStr)) {
                     existingProfessor.subjects.push(subject.id);
                     await existingProfessor.save();
                 }
 
-                // Actualizar la materia para que incluya al profesor si aún no lo tiene
                 const professorIdStr = existingProfessor.id.toString();
                 const subjectProfessors = subject.professors.map(id => id.toString());
                 if (!subjectProfessors.includes(professorIdStr)) {
@@ -42,11 +37,10 @@ export class ProfessorController {
                     await subject.save();
                 }
 
-                res.status(201).send('Profesor creado correctamente')
-                return 
+                res.status(201).send('Profesor creado correctamente');
+                return;
             }
 
-            // Crear nuevo profesor si no existe
             const newProfessor = new Professor({
                 name,
                 department,
@@ -55,7 +49,6 @@ export class ProfessorController {
                 subjects: [subject.id]
             });
 
-            // Actualizar relaciones bidireccionales
             subject.professors.push(newProfessor.id);
 
             await Promise.allSettled([
@@ -74,20 +67,131 @@ export class ProfessorController {
         }
     }
 
+    static createProfessorWithMultipleSubjects = async (req: Request, res: Response) => {
+        try {
+            const faculty = req.faculty;
+            const { name, department, biography, subjects: subjectIds } = req.body;
+
+            console.log('Received data for multiple subjects:', { name, department, biography, subjectIds });
+
+            const subjects = await Subject.find({ _id: { $in: subjectIds } });
+            if (subjects.length !== subjectIds.length) {
+                res.status(404).json({ error: 'Algunas materias no fueron encontradas' });
+                return;
+            }
+
+            const existingProfessor = await Professor.findOne({
+                name: name.trim(),
+                faculty: faculty.id
+            });
+
+            if (existingProfessor) {
+                const existingSubjectIds = existingProfessor.subjects.map(id => id.toString());
+                subjects.forEach(subject => {
+                    const subjectIdStr = subject.id.toString();
+                    if (!existingSubjectIds.includes(subjectIdStr)) {
+                        existingProfessor.subjects.push(subject.id);
+                    }
+                    const professorIdStr = existingProfessor.id.toString();
+                    const subjectProfessors = subject.professors.map(id => id.toString());
+                    if (!subjectProfessors.includes(professorIdStr)) {
+                        subject.professors.push(existingProfessor.id);
+                    }
+                });
+                await existingProfessor.save();
+                await Promise.allSettled(subjects.map(subject => subject.save()));
+                res.status(201).send('Profesor actualizado con nuevas materias');
+                return;
+            }
+
+            const newProfessor = new Professor({
+                name,
+                department,
+                biography,
+                faculty: faculty.id,
+                subjects: subjects.map(subject => subject.id)
+            });
+
+            subjects.forEach(subject => {
+                subject.professors.push(newProfessor.id);
+            });
+
+            await Promise.allSettled([
+                newProfessor.save(),
+                ...subjects.map(subject => subject.save())
+            ]);
+
+            console.log('Professor saved:', newProfessor);
+            console.log('Subjects updated:', subjects);
+
+            res.json({
+                message: 'Profesor creado y asignado a las materias',
+                professor: newProfessor
+            });
+
+        } catch (error) {
+            console.error('Error en createProfessorWithMultipleSubjects:', error.message);
+            res.status(500).json({ error: 'Hubo un error al crear el profesor' });
+        }
+    }
+
+    static getAllProfessorsWithDetails = async (req: Request, res: Response) => {
+        try {
+            // Populate with type assertion to tell TypeScript about the expected structure
+            const professors = await Professor.find()
+                .populate({
+                    path: 'subjects',
+                    select: 'name' // Explicitly select the name field
+                })
+                .populate({
+                    path: 'faculty',
+                    select: 'name' // Explicitly select the name field
+                });
+
+            // Map the professors with type safety
+            const professorsWithDetails = professors.map(professor => ({
+                _id: professor._id,
+                name: professor.name,
+                faculty: professor.faculty ? (professor.faculty as any).name : 'Sin facultad',
+                subjects: professor.subjects.map(subject => (subject as any).name),
+                ratingStats: professor.ratingStats
+            }));
+
+            res.json(professorsWithDetails);
+        } catch (error) {
+            console.error('Error al obtener los profesores:', error);
+            res.status(500).json({ error: 'Hubo un error al obtener los profesores' });
+        }
+    }
+
+    static getAllProfessors = async (req: Request, res: Response) => {
+        try {
+            const professors = await Professor.find()
+                .populate('department', 'name')
+                .populate('subjects', 'name')
+                .populate('faculty', 'name');
+
+            res.json(professors);
+        } catch (error) {
+            console.error('Error al traer todas las materias:', error);
+            res.status(500).json({ error: 'Hubo un error' });
+        }
+    };
+
     static getFacultyProfessors = async (req: Request, res: Response) => {
         try {
-            const professors = await Professor.find({ faculty: req.faculty.id })
-            res.json(professors)
+            const professors = await Professor.find({ faculty: req.faculty.id });
+            res.json(professors);
         } catch (error) {
-            res.status(500).json({ error: 'Hubo un error al mostrar profesores' })
+            res.status(500).json({ error: 'Hubo un error al mostrar profesores' });
         }
     }
 
     static getProfessorById = async (req: Request, res: Response) => {
         try {
-            res.json(req.professor)
+            res.json(req.professor);
         } catch (error) {
-            res.status(500).json({ error: 'Hubo un error al buscar el profesor' })
+            res.status(500).json({ error: 'Hubo un error al buscar el profesor' });
         }
     }
 
@@ -95,58 +199,45 @@ export class ProfessorController {
         try {
             const professor = req.professor;
             const { subject: newSubjects, ...rest } = req.body;
-
             let newSubjectIds: Types.ObjectId[] = [];
 
-            // Evitar duplicados
             if (rest.name) {
                 const existing = await Professor.findOne({
                     name: rest.name.trim(),
                     faculty: professor.faculty,
                     _id: { $ne: professor.id }
                 });
-                
+
                 if (existing) {
-                    res.status(400).json({ error: 'Ya existe un profesor con este nombre' })
-                    return 
+                    res.status(400).json({ error: 'Ya existe un profesor con este nombre' });
+                    return;
                 }
             }
 
-            // Actualizar
-            Object.assign(professor, rest)
+            Object.assign(professor, rest);
 
-            // Agregar nuevas materias
             if (newSubjects && Array.isArray(newSubjects)) {
-                console.log("Materias recibidas:", newSubjects);
-    
-                // Validar que todos sean ObjectId válidos
                 const validSubjects = newSubjects
                     .map(id => id.toString().trim())
                     .filter(id => Types.ObjectId.isValid(id))
-                    .map(id => new Types.ObjectId(id))
+                    .map(id => new Types.ObjectId(id));
 
                 if (validSubjects.length !== newSubjects.length) {
-                    res.status(400).json({ error: "Algunos IDs de materias son inválidos" })
-                    return 
+                    res.status(400).json({ error: "Algunos IDs de materias son inválidos" });
+                    return;
                 }
 
-                console.log("Nuevos IDs de materias:", validSubjects);
-    
-                // Evitar duplicados antes de agregar nuevas materias
                 const existingSubjectIds = professor.subjects.map(id => id.toString());
 
                 validSubjects.forEach(id => {
                     if (!existingSubjectIds.includes(id.toString())) {
-                        professor.subjects.push(id); // Solo agregar si no está ya en la lista
+                        professor.subjects.push(id);
                     }
                 });
-
-                console.log("Materias finales del profesor:", professor.subjects);
             }
-    
-            await professor.save(); // Guardar cambios en el profesor
-    
-            // Actualizar relaciones en las materias nuevas
+
+            await professor.save();
+
             if (newSubjectIds.length > 0) {
                 await Subject.updateMany(
                     { _id: { $in: newSubjectIds } },
@@ -155,27 +246,26 @@ export class ProfessorController {
             }
 
             res.json({
-                message: 'Profesor creado y asignado a la materia',
+                message: 'Profesor actualizado y asignado a las materias',
                 professor: req.professor
             });
         } catch (error) {
-            console.log(error)
-            res.status(500).json({ error: 'Hubo un error al actualizar el profesor' })
+            console.log(error);
+            res.status(500).json({ error: 'Hubo un error al actualizar el profesor' });
         }
     }
 
     static deleteProfessor = async (req: Request, res: Response) => {
         try {
-            // Ejecutar todas las operaciones juntas
             await Promise.allSettled([
-                req.professor.deleteOne(), // Elimina al profesor
-                Rating.deleteMany({ professor: req.professor.id }), // Elimina las calificaciones asociadas al profesor
-                Subject.updateMany({ professors: req.professor.id }, { $pull: { professors: req.professor.id } }) // Elimina la referencia del profesor en las materias
-            ])
+                req.professor.deleteOne(),
+                Rating.deleteMany({ professor: req.professor.id }),
+                Subject.updateMany({ professors: req.professor.id }, { $pull: { professors: req.professor.id } })
+            ]);
 
-            res.send('Profesor eliminado correctamente')
+            res.send('Profesor eliminado correctamente');
         } catch (error) {
-            res.status(500).json({ error: 'Hubo un error al eliminar el profesor' })
+            res.status(500).json({ error: 'Hubo un error al eliminar el profesor' });
         }
     }
 }

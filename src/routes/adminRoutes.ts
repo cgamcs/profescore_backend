@@ -62,8 +62,6 @@ router.get('/faculty/:facultyId',
     FacultyController.getFacultyById
 );
 
-router.get('/faculty/:facultyId/departments', FacultyController.getFacultyDepartments);
-
 // Actualizar facultad
 router.put('/faculty/:facultyId',
     param('facultyId').isMongoId().withMessage('ID no válido'),
@@ -87,6 +85,11 @@ router.post('/faculty/:facultyId/departments',
     FacultyController.addDepartment
 );
 
+// Obtener departamentos por facultad
+router.get('/faculty/:facultyId/departments', FacultyController.getFacultyDepartments);
+
+// **** MATERIAS ****
+
 // Obtener todas las materias de todas las facultades
 router.get('/subjects', SubjectController.getAllSubjects);
 
@@ -100,6 +103,8 @@ router.post('/faculty/:facultyId/subject',
 // Middlewares para validar Materias
 router.param('subjectId', subjectExists); // Verificar si la Materia existe
 router.param('subjectId', subjectBelongsToFaculty); // Verificar que la Materia pertenezca a la Facultad
+
+router.get('/faculty/:facultyId/subjects', SubjectController.getFacultySubjects);
 
 // Obtener materia por id
 router.get('/faculty/:facultyId/subject/:subjectId',
@@ -126,7 +131,7 @@ router.delete('/faculty/:facultyId/subject/:subjectId',
 
 // **** PROFESORES ****
 
-// Crear un profesor, con subject enviado en el body
+// Crear un profesor con una sola materia
 router.post('/faculty/:facultyId/professor',
     body('subject').isMongoId().withMessage('ID de materia inválido'),
     body('name').notEmpty().withMessage('El nombre del profesor es obligatorio'),
@@ -135,6 +140,23 @@ router.post('/faculty/:facultyId/professor',
     handleInputErrors,
     ProfessorController.createProfessor
 );
+
+// Crear un profesor con múltiples materias
+router.post('/faculty/:facultyId/professor/multiple',
+    body('subjects').isArray().withMessage('Debe ser un arreglo de materias'),
+    body('subjects.*').isMongoId().withMessage('ID de materia inválido'),
+    body('name').notEmpty().withMessage('El nombre del profesor es obligatorio'),
+    body('department').notEmpty().withMessage('El departamento es obligatorio'),
+    body('biography').notEmpty().withMessage('La biografía es obligatoria'),
+    handleInputErrors,
+    ProfessorController.createProfessorWithMultipleSubjects
+);
+
+// Obtener todos los profesores de todas las facultades con detalles
+router.get('/professors', ProfessorController.getAllProfessorsWithDetails);
+
+// Obtener todos los profesores de todas las facultades
+// router.get('/professors', ProfessorController.getAllProfessors);
 
 // Obtener todos los profesores de una facultad
 router.get('/faculty/:facultyId/professor', ProfessorController.getFacultyProfessors);
