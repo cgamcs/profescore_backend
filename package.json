@@ -11,6 +11,7 @@
   "description": "",
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",
+    "axios": "^1.8.4",
     "bcryptjs": "^3.0.2",
     "colors": "^1.4.0",
     "cors": "^2.8.5",

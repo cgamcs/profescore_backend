@@ -1,4 +1,3 @@
-// publicRoutes.ts
 import { Router } from 'express';
 import { body, param } from 'express-validator';
 import { FacultyController } from '../controllers/FacultyController';
@@ -10,6 +9,7 @@ import { facultyExists } from '../middleware/faculty';
 import { subjectExists, subjectBelongsToFaculty } from '../middleware/subject';
 import { professorExists } from '../middleware/professor';
 import { ratingExists, ratingBelongsToProfessor } from '../middleware/rating';
+import { verifyRecaptcha } from '../controllers/RecaptchaController'; // Importa el controlador de reCAPTCHA
 
 const router = Router();
 
@@ -76,10 +76,12 @@ router.post('/:facultyId/professors',
 // --- Rutas de Calificaciones ---
 router.get('/:facultyId/professors/:professorId/ratings', RatingController.getProfessorRatings);
 
-router.post('/:facultyId/professors/:professorId/ratings', 
+router.post('/:facultyId/professors/:professorId/ratings',
   body('general').isFloat({ min: 1, max: 5 }).withMessage('La calificación general debe estar entre 1 y 5'),
   body('subject').isMongoId().withMessage('El ID de la materia es inválido'),
+  body('captcha').notEmpty().withMessage('El CAPTCHA es obligatorio'), // Validar que el CAPTCHA esté presente
   handleInputErrors,
+  verifyRecaptcha, // Verificar el CAPTCHA antes de crear la calificación
   RatingController.createRating
 );
 
