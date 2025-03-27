@@ -1,8 +1,7 @@
 import { CorsOptions } from 'cors';
 
 const allowedOrigins = [
-  process.env.FRONTEND_URL, // Frontend
-  process.env.BACKEND_URL// Backend (si es necesario)
+  process.env.FRONTEND_URL // Frontend
 ];
 
 console.log('Frontend URL:', process.env.FRONTEND_URL);

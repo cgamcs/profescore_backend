@@ -13,12 +13,13 @@ const adminAuth = (req, res, next) => {
         return;
     }
     try {
-        const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET || 'secret');
+        const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
         req.admin = decoded;
         next();
     }
     catch (error) {
         res.status(400).json({ error: 'Token inválido' });
+        return;
     }
 };
 exports.adminAuth = adminAuth;

@@ -14,7 +14,7 @@ export const adminAuth = (req: Request, res: Response, next: NextFunction) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
   if (!token) {
     res.status(401).json({ error: 'Acceso denegado, no token' })
-    return 
+    return
   } 
 
   try {
@@ -23,5 +23,6 @@ export const adminAuth = (req: Request, res: Response, next: NextFunction) => {
     next();
   } catch (error) {
     res.status(400).json({ error: 'Token inválido' });
+    return
   }
 };
