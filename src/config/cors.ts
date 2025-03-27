@@ -1,15 +1,19 @@
 import { CorsOptions } from 'cors';
 
 const allowedOrigins = [
-  'http://localhost:5173', // Frontend
-  'http://localhost:4000'  // Backend (si es necesario)
+  process.env.FRONTEND_URL, // Frontend
+  process.env.BACKEND_URL// Backend (si es necesario)
 ];
+
+console.log('Frontend URL:', process.env.FRONTEND_URL);
+console.log('Backend URL:', process.env.BACKEND_URL);
 
 const corsOptions: CorsOptions = {
   origin: (origin, callback) => {
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
+      console.log('Bloqueado por CORS:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },

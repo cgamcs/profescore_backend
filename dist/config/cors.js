@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const allowedOrigins = [
-    'http://localhost:5173', // Frontend
-    'http://localhost:4000' // Backend (si es necesario)
+    process.env.FRONTEND_URL, // Frontend
+    process.env.BACKEND_URL // Backend (si es necesario)
 ];
 const corsOptions = {
     origin: (origin, callback) => {

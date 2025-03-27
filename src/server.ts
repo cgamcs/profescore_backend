@@ -1,12 +1,12 @@
-import express from 'express'
 import dotenv from 'dotenv'
+dotenv.config()
+
+import express from 'express'
 import cors from 'cors'
 import corsOptions from './config/cors'
 import { connectDB } from './config/db'
 import facultyRoutes from './routes/facultyRoutes'
 import adminRoutes from './routes/adminRoutes'
-
-dotenv.config()
 
 connectDB()
 
