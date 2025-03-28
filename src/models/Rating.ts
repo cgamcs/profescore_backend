@@ -1,18 +1,18 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface IRating extends Document {
-    general: number
-    explanation: number
-    accessibility: number
-    difficulty: number
-    attendance: number
-    wouldRetake: boolean
-    comment: string
-    professor: Types.ObjectId
-    subject: Types.ObjectId
-    likes: string[]  // Almacenará IPs de likes
-    dislikes: string[] // Almacenará IPs de dislikes
-    createdAt: Date
+    general: number;
+    explanation: number;
+    accessibility: number;
+    difficulty: number;
+    attendance: number;
+    wouldRetake: boolean;
+    comment: string;
+    professor: Types.ObjectId;
+    subject: Types.ObjectId;
+    likes: string[]; // Almacenará IPs de likes
+    dislikes: string[]; // Almacenará IPs de dislikes
+    createdAt: Date;
 }
 
 const RatingSchema: Schema = new Schema({
