@@ -12,7 +12,6 @@ export interface IRating extends Document {
     subject: Types.ObjectId
     likes: string[]  // Almacenará IPs de likes
     dislikes: string[] // Almacenará IPs de dislikes
-    userIdentifier: string
     createdAt: Date
 }
 
