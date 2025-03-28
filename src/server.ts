@@ -7,18 +7,28 @@ import corsOptions from './config/cors';
 import { connectDB } from './config/db';
 import facultyRoutes from './routes/facultyRoutes';
 import adminRoutes from './routes/adminRoutes';
+import User from './models/User';
 
 connectDB();
 
 const app = express();
 
-app.use(cors(corsOptions));
 app.use(express.json());
+app.use(cors(corsOptions));
 
 // Endpoint para manejar las solicitudes de FingerprintJS
-app.post('/api/fingerprint', (req, res) => {
-  console.log('Datos del visitante:', req.body);
-  res.status(200).json({ message: 'Datos del visitante recibidos' });
+app.post('/fingerprint', async (req, res) => {
+    try {
+      const { fingerprint, ip } = req.body;
+      const user = await User.findOneAndUpdate(
+        { fingerprint },
+        { ip, lastSeen: new Date() },
+        { upsert: true, new: true }
+      );
+      res.status(200).json(user);
+    } catch (error) {
+      res.status(500).json({ error: 'Error al registrar fingerprint' });
+    }
 });
 
 // Rutas públicas
