@@ -1,10 +1,8 @@
-// controllers/RatingController.js
 import { Request, Response } from 'express';
 import Rating from '../models/Rating';
 import Professor from '../models/Professor';
 import Subject from '../models/Subject';
 import mongoose from 'mongoose';
-import { UserController } from './UserController';
 
 export class RatingController {
   static createRating = async (req: Request, res: Response) => {
@@ -12,18 +10,11 @@ export class RatingController {
       console.log('Datos recibidos en el backend:', req.body);
       console.log('Params:', req.params);
 
-      const { general, explanation, accessibility, difficulty, attendance, wouldRetake, comment, subject, userIdentifier, ipAddress } = req.body;
+      const { general, explanation, accessibility, difficulty, attendance, wouldRetake, comment, subject } = req.body;
       const { facultyId, professorId } = req.params;
 
       if (!subject || !professorId) {
         res.status(400).json({ error: 'Faltan campos obligatorios' });
-        return;
-      }
-
-      const user = await UserController.getOrCreateUser(userIdentifier, ipAddress);
-
-      if (await UserController.hasRatedRecently(user, professorId, subject)) {
-        res.status(400).json({ error: 'Ya has calificado a este profesor en esta materia recientemente.' });
         return;
       }
 
@@ -34,7 +25,7 @@ export class RatingController {
 
       if (!professor || !subjectDoc) {
         res.status(404).json({ error: 'Profesor o materia no encontrados' });
-        return 
+        return;
       }
 
       if (!professor.subjects.includes(subject)) {
@@ -52,20 +43,17 @@ export class RatingController {
         comment,
         subject,
         professor: professorId,
-        userIdentifier
       });
 
       const savedRating = await newRating.save();
       console.log('Calificación guardada:', savedRating);
 
-      await UserController.addRating(user, professorId, subject);
       await this.updateProfessorStats(professorId);
 
       res.status(201).json(savedRating);
-      return 
     } catch (error) {
       console.error('Error al crear calificación:', error);
-      /* return  */res.status(500).json({
+      res.status(500).json({
         error: 'Error al crear la calificación',
         details: error.message
       });
@@ -89,7 +77,6 @@ export class RatingController {
   static voteHelpful = async (req: Request, res: Response) => {
     try {
       const { type } = req.body;
-      const userIP = req.ip;
       const { ratingId } = req.params;
 
       const rating = await Rating.findById(ratingId);
@@ -98,27 +85,24 @@ export class RatingController {
         return;
       }
 
-      const hasLiked = rating.likes.includes(userIP);
-      const hasDisliked = rating.dislikes.includes(userIP);
-
       let updateQuery = {};
 
       if (type === 1) {
-        if (hasLiked) {
-          updateQuery = { $pull: { likes: userIP } };
+        if (rating.likes.includes(req.ip)) {
+          updateQuery = { $pull: { likes: req.ip } };
         } else {
           updateQuery = {
-            $addToSet: { likes: userIP },
-            $pull: { dislikes: userIP }
+            $addToSet: { likes: req.ip },
+            $pull: { dislikes: req.ip }
           };
         }
       } else if (type === 0) {
-        if (hasDisliked) {
-          updateQuery = { $pull: { dislikes: userIP } };
+        if (rating.dislikes.includes(req.ip)) {
+          updateQuery = { $pull: { dislikes: req.ip } };
         } else {
           updateQuery = {
-            $addToSet: { dislikes: userIP },
-            $pull: { likes: userIP }
+            $addToSet: { dislikes: req.ip },
+            $pull: { likes: req.ip }
           };
         }
       } else {

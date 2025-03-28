@@ -1,4 +1,3 @@
-// routes/facultyRoutes.js
 import { Router } from 'express';
 import { body, param } from 'express-validator';
 import { FacultyController } from '../controllers/FacultyController';
