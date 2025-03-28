@@ -76,8 +76,13 @@ export class RatingController {
 
   static voteHelpful = async (req: Request, res: Response) => {
     try {
-      const { type } = req.body;
+      const { type, userId } = req.body; // Obtener userId del cuerpo
       const { ratingId } = req.params;
+
+      if (!userId) {
+        res.status(400).json({ error: 'ID de usuario requerido' });
+        return;
+      }
 
       const rating = await Rating.findById(ratingId);
       if (!rating) {
@@ -88,21 +93,12 @@ export class RatingController {
       let updateQuery = {};
 
       if (type === 1) {
-        if (rating.likes.includes(req.ip)) {
-          updateQuery = { $pull: { likes: req.ip } };
+        if (rating.likes.includes(userId)) {
+          updateQuery = { $pull: { likes: userId } };
         } else {
           updateQuery = {
-            $addToSet: { likes: req.ip },
-            $pull: { dislikes: req.ip }
-          };
-        }
-      } else if (type === 0) {
-        if (rating.dislikes.includes(req.ip)) {
-          updateQuery = { $pull: { dislikes: req.ip } };
-        } else {
-          updateQuery = {
-            $addToSet: { dislikes: req.ip },
-            $pull: { likes: req.ip }
+            $addToSet: { likes: userId },
+            $pull: { dislikes: userId }
           };
         }
       } else {
@@ -118,7 +114,6 @@ export class RatingController {
 
       res.json(updatedRating);
     } catch (error) {
-      console.log(error.message);
       res.status(500).json({ error: 'Error al registrar voto' });
     }
   }
@@ -126,16 +121,18 @@ export class RatingController {
   private static updateProfessorStats = async (professorId: string) => {
     const stats = await Rating.aggregate([
       { $match: { professor: new mongoose.Types.ObjectId(professorId) } },
-      { $group: {
-        _id: null,
-        totalRatings: { $sum: 1 },
-        averageGeneral: { $avg: "$general" },
-        averageExplanation: { $avg: "$explanation" },
-        averageAccessibility: { $avg: "$accessibility" },
-        averageDifficulty: { $avg: "$difficulty" },
-        averageAttendance: { $avg: "$attendance" },
-        wouldRetakeCount: { $sum: { $cond: ["$wouldRetake", 1, 0] } }
-      }}
+      {
+        $group: {
+          _id: null,
+          totalRatings: { $sum: 1 },
+          averageGeneral: { $avg: "$general" },
+          averageExplanation: { $avg: "$explanation" },
+          averageAccessibility: { $avg: "$accessibility" },
+          averageDifficulty: { $avg: "$difficulty" },
+          averageAttendance: { $avg: "$attendance" },
+          wouldRetakeCount: { $sum: { $cond: ["$wouldRetake", 1, 0] } }
+        }
+      }
     ]);
 
     if (stats.length > 0) {
