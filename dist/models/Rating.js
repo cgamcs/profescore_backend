@@ -91,11 +91,6 @@ const RatingSchema = new mongoose_1.Schema({
         type: [String],
         default: [] // Inicializar array vacío
     },
-    userIdentifier: {
-        type: String,
-        required: true,
-        index: true
-    },
     dislikes: {
         type: [String],
         default: [] // Inicializar array vacío

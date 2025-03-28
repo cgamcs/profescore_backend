@@ -72,11 +72,6 @@ const RatingSchema: Schema = new Schema({
         type: [String],
         default: [] // Inicializar array vacío
     },
-    userIdentifier: {
-        type: String,
-        required: true,
-        index: true
-    },
     dislikes: {
         type: [String],
         default: [] // Inicializar array vacío
