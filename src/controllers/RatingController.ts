@@ -15,7 +15,7 @@ export class RatingController {
       const { general, explanation, accessibility, difficulty, attendance, wouldRetake, comment, subject, userIdentifier, ipAddress } = req.body;
       const { facultyId, professorId } = req.params;
 
-      if (!subject || !professorId || !userIdentifier) {
+      if (!subject || !professorId) {
         res.status(400).json({ error: 'Faltan campos obligatorios' });
         return;
       }
