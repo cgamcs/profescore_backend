@@ -13,8 +13,8 @@ const facultyRoutes_1 = __importDefault(require("./routes/facultyRoutes"));
 const adminRoutes_1 = __importDefault(require("./routes/adminRoutes"));
 (0, db_1.connectDB)();
 const app = (0, express_1.default)();
-app.use((0, cors_1.default)(cors_2.default));
 app.use(express_1.default.json());
+app.use((0, cors_1.default)(cors_2.default));
 // Rutas públicas
 app.use('/api/faculties', facultyRoutes_1.default);
 // Rutas administrativas (login y operaciones protegidas)

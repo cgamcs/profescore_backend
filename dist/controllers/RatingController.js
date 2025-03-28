@@ -9,32 +9,28 @@ const Professor_1 = __importDefault(require("../models/Professor"));
 const Subject_1 = __importDefault(require("../models/Subject"));
 const mongoose_1 = __importDefault(require("mongoose"));
 class RatingController {
-    // Crear calificación
     static createRating = async (req, res) => {
         try {
             console.log('Datos recibidos en el backend:', req.body);
             console.log('Params:', req.params);
-            // Verificar que todos los campos necesarios estén presentes
-            const { general, explanation, accessibility, difficulty, attendance, wouldRetake, comment, subject, userIdentifier } = req.body;
+            const { general, explanation, accessibility, difficulty, attendance, wouldRetake, comment, subject } = req.body;
             const { facultyId, professorId } = req.params;
             if (!subject || !professorId) {
                 res.status(400).json({ error: 'Faltan campos obligatorios' });
                 return;
             }
-            // Actualizar relación profesor-materia
             const [professor, subjectDoc] = await Promise.all([
                 Professor_1.default.findById(professorId),
                 Subject_1.default.findById(subject)
             ]);
             if (!professor || !subjectDoc) {
-                return res.status(404).json({ error: 'Profesor o materia no encontrados' });
+                res.status(404).json({ error: 'Profesor o materia no encontrados' });
+                return;
             }
-            // Agregar materia si no existe
             if (!professor.subjects.includes(subject)) {
                 professor.subjects.push(subject);
                 await professor.save();
             }
-            // Crear la calificación
             const newRating = new Rating_1.default({
                 general,
                 explanation,
@@ -45,24 +41,20 @@ class RatingController {
                 comment,
                 subject,
                 professor: professorId,
-                userIdentifier
             });
-            // Guardar en la base de datos
             const savedRating = await newRating.save();
             console.log('Calificación guardada:', savedRating);
-            // Actualizar estadisticas
             await this.updateProfessorStats(professorId);
-            return res.status(201).json(savedRating);
+            res.status(201).json(savedRating);
         }
         catch (error) {
             console.error('Error al crear calificación:', error);
-            return res.status(500).json({
+            res.status(500).json({
                 error: 'Error al crear la calificación',
                 details: error.message
             });
         }
     };
-    // Obtener calificaciones
     static getProfessorRatings = async (req, res) => {
         try {
             const { professorId } = req.params;
@@ -75,40 +67,35 @@ class RatingController {
             res.status(500).json({ error: 'Error al obtener calificaciones' });
         }
     };
-    // Votar comentario útil
     static voteHelpful = async (req, res) => {
         try {
-            const { type } = req.body; // 1 = like, 0 = dislike
-            const userIP = req.ip; // Obtener IP del cliente
+            const { type } = req.body;
             const { ratingId } = req.params;
-            const rating = await Rating_1.default.findById(ratingId); // <-- Buscar calificación
+            const rating = await Rating_1.default.findById(ratingId);
             if (!rating) {
                 res.status(404).json({ error: 'Calificación no encontrada' });
                 return;
             }
-            // Verificar voto previo
-            const hasLiked = req.rating.likes.includes(userIP);
-            const hasDisliked = req.rating.dislikes.includes(userIP);
             let updateQuery = {};
-            if (type === 1) { // Like
-                if (hasLiked) {
-                    updateQuery = { $pull: { likes: userIP } }; // Quitar like
+            if (type === 1) {
+                if (rating.likes.includes(req.ip)) {
+                    updateQuery = { $pull: { likes: req.ip } };
                 }
                 else {
                     updateQuery = {
-                        $addToSet: { likes: userIP },
-                        $pull: { dislikes: userIP }
+                        $addToSet: { likes: req.ip },
+                        $pull: { dislikes: req.ip }
                     };
                 }
             }
-            else if (type === 0) { // Dislike
-                if (hasDisliked) {
-                    updateQuery = { $pull: { dislikes: userIP } }; // Quitar dislike
+            else if (type === 0) {
+                if (rating.dislikes.includes(req.ip)) {
+                    updateQuery = { $pull: { dislikes: req.ip } };
                 }
                 else {
                     updateQuery = {
-                        $addToSet: { dislikes: userIP },
-                        $pull: { likes: userIP }
+                        $addToSet: { dislikes: req.ip },
+                        $pull: { likes: req.ip }
                     };
                 }
             }
@@ -124,7 +111,6 @@ class RatingController {
             res.status(500).json({ error: 'Error al registrar voto' });
         }
     };
-    // Actualizar estadísticas (método privado)
     static updateProfessorStats = async (professorId) => {
         const stats = await Rating_1.default.aggregate([
             { $match: { professor: new mongoose_1.default.Types.ObjectId(professorId) } },
