@@ -69,8 +69,12 @@ class RatingController {
     };
     static voteHelpful = async (req, res) => {
         try {
-            const { type } = req.body;
+            const { type, userId } = req.body; // Obtener userId del cuerpo
             const { ratingId } = req.params;
+            if (!userId) {
+                res.status(400).json({ error: 'ID de usuario requerido' });
+                return;
+            }
             const rating = await Rating_1.default.findById(ratingId);
             if (!rating) {
                 res.status(404).json({ error: 'Calificación no encontrada' });
@@ -78,24 +82,13 @@ class RatingController {
             }
             let updateQuery = {};
             if (type === 1) {
-                if (rating.likes.includes(req.ip)) {
-                    updateQuery = { $pull: { likes: req.ip } };
+                if (rating.likes.includes(userId)) {
+                    updateQuery = { $pull: { likes: userId } };
                 }
                 else {
                     updateQuery = {
-                        $addToSet: { likes: req.ip },
-                        $pull: { dislikes: req.ip }
-                    };
-                }
-            }
-            else if (type === 0) {
-                if (rating.dislikes.includes(req.ip)) {
-                    updateQuery = { $pull: { dislikes: req.ip } };
-                }
-                else {
-                    updateQuery = {
-                        $addToSet: { dislikes: req.ip },
-                        $pull: { likes: req.ip }
+                        $addToSet: { likes: userId },
+                        $pull: { dislikes: userId }
                     };
                 }
             }
@@ -107,14 +100,14 @@ class RatingController {
             res.json(updatedRating);
         }
         catch (error) {
-            console.log(error.message);
             res.status(500).json({ error: 'Error al registrar voto' });
         }
     };
     static updateProfessorStats = async (professorId) => {
         const stats = await Rating_1.default.aggregate([
             { $match: { professor: new mongoose_1.default.Types.ObjectId(professorId) } },
-            { $group: {
+            {
+                $group: {
                     _id: null,
                     totalRatings: { $sum: 1 },
                     averageGeneral: { $avg: "$general" },
@@ -123,7 +116,8 @@ class RatingController {
                     averageDifficulty: { $avg: "$difficulty" },
                     averageAttendance: { $avg: "$attendance" },
                     wouldRetakeCount: { $sum: { $cond: ["$wouldRetake", 1, 0] } }
-                } }
+                }
+            }
         ]);
         if (stats.length > 0) {
             await Professor_1.default.findByIdAndUpdate(professorId, {
