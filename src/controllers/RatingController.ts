@@ -3,6 +3,7 @@ import Rating from '../models/Rating';
 import Professor from '../models/Professor';
 import Subject from '../models/Subject';
 import mongoose from 'mongoose';
+import Report from '../models/Report';
 
 export class RatingController {
   static createRating = async (req: Request, res: Response) => {
@@ -142,6 +143,103 @@ export class RatingController {
           wouldRetakePercentage: (stats[0].wouldRetakeCount / stats[0].totalRatings) * 100
         }
       });
+    }
+  }
+
+  static createReport = async (req: Request, res: Response) => {
+    try {
+      const { commentId, reasons, reportComment } = req.body;
+      console.log(req.body)
+      // Validar que la calificación exista
+      const rating = await Rating.findById(commentId);
+      console.log(rating)
+      if (!rating) {
+        res.status(404).json({ message: 'Calificación no encontrada' });
+        return
+      }
+  
+      // Crear el reporte
+      const newReport = new Report({
+        commentId: rating._id,
+        ratingComment: rating.comment,
+        ratingDate: rating.createdAt,
+        teacherId: rating.professor,
+        subject: rating.subject,
+        reasons,
+        reportComment,
+        status: 'pending',
+        reportDate: new Date()
+      });
+
+      console.log(newReport)
+  
+      await newReport.save();
+  
+      res.status(201).json(newReport);
+    } catch (error) {
+      console.error('Error al crear el reporte:', error);
+      res.status(500).json({ message: 'Error al crear el reporte' });
+    }
+  }
+
+  static getAllReport = async (req: Request, res: Response) => {
+    try {
+      const reports = await Report.find()
+        .populate('commentId', 'general comment createdAt')
+        .populate('teacherId', 'name biography department')
+        .exec();
+  
+      res.status(200).json(reports);
+    } catch (error) {
+      console.error('Error al obtener los reportes:', error);
+      res.status(500).json({ message: 'Error al obtener los reportes' });
+    }
+  }
+
+  static getReportById = async (req: Request, res: Response) => {
+    try {
+      const report = await Report.findById(req.params.id)
+        .populate('commentId', 'general comment createdAt')
+        .populate('teacherId', 'name biography department')
+        .exec();
+  
+      if (!report) {
+        res.status(404).json({ message: 'Reporte no encontrado' });
+        return
+      }
+  
+      res.status(200).json(report);
+    } catch (error) {
+      console.error('Error al obtener el reporte:', error);
+      res.status(500).json({ message: 'Error al obtener el reporte' });
+    }
+  }
+
+  static deleteReport = async (req: Request, res: Response) => {
+    try {
+      const report = await Report.findByIdAndDelete(req.params.id);
+      if (!report) {
+        res.status(404).json({ message: 'Reporte no encontrado' });
+        return
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error al eliminar el reporte:', error);
+      res.status(500).json({ message: 'Error al eliminar el reporte' });
+    }
+  }
+
+  static rejectReport = async (req: Request, res: Response) => {
+    try {
+      const report = await Report.findByIdAndUpdate(req.params.id, { status: 'rejected' }, { new: true });
+      if (!report) {
+        res.status(404).json({ message: 'Reporte no encontrado' });
+        return
+      }
+      res.status(200).json(report);
+    } catch (error) {
+      console.error('Error al rechazar el reporte:', error);
+      res.status(500).json({ message: 'Error al rechazar el reporte' });
     }
   }
 }

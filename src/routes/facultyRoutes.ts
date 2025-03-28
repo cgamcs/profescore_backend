@@ -78,4 +78,13 @@ router.post('/:facultyId/professors/:professorId/ratings/:ratingId/vote',
   RatingController.voteHelpful
 );
 
+// Ruta para crear un reporte
+router.post('/:facultyId/professors/:professorId/ratings/:ratingId/report',
+  param('ratingId').isMongoId().withMessage('ID de calificación inválido'),
+  body('reasons').isArray().withMessage('Los motivos deben ser un array'),
+  body('reportComment').optional().isString().withMessage('El comentario del reporte debe ser un string'),
+  handleInputErrors,
+  RatingController.createReport
+);
+
 export default router;

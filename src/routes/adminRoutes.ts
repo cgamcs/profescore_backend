@@ -10,6 +10,7 @@ import { facultyExists } from '../middleware/faculty';
 import { subjectBelongsToFaculty, subjectExists } from '../middleware/subject';
 import { professorExists } from '../middleware/professor';
 import { DashboardController } from '../controllers/DashboardController';
+import { RatingController } from '../controllers/RatingController';
 
 const router = Router();
 
@@ -186,5 +187,11 @@ router.delete('/faculty/:facultyId/professor/:professorId',
     handleInputErrors,
     ProfessorController.deleteProfessor
 );
+
+// **** REPORTES ****
+router.get('/reports', RatingController.getAllReport);
+router.get('/reports/:id', RatingController.getReportById);
+router.delete('/reports/:id', RatingController.deleteReport);
+router.put('/reports/:id/reject', RatingController.rejectReport);
 
 export default router;
