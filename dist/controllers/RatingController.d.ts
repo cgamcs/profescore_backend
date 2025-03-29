@@ -4,4 +4,9 @@ export declare class RatingController {
     static getProfessorRatings: (req: Request, res: Response) => Promise<void>;
     static voteHelpful: (req: Request, res: Response) => Promise<void>;
     private static updateProfessorStats;
+    static createReport: (req: Request, res: Response) => Promise<void>;
+    static getAllReport: (req: Request, res: Response) => Promise<void>;
+    static getReportById: (req: Request, res: Response) => Promise<void>;
+    static deleteReport: (req: Request, res: Response) => Promise<void>;
+    static rejectReport: (req: Request, res: Response) => Promise<void>;
 }

@@ -30,5 +30,7 @@ router.get('/:facultyId/professors/:professorId/ratings', RatingController_1.Rat
 router.post('/:facultyId/professors/:professorId/ratings', (0, express_validator_1.body)('general').isFloat({ min: 1, max: 5 }).withMessage('La calificación general debe estar entre 1 y 5'), (0, express_validator_1.body)('subject').isMongoId().withMessage('El ID de la materia es inválido'), (0, express_validator_1.body)('captcha').notEmpty().withMessage('El CAPTCHA es obligatorio'), validation_1.handleInputErrors, RecaptchaController_1.verifyRecaptcha, RatingController_1.RatingController.createRating);
 router.param('ratingId', rating_1.ratingExists);
 router.post('/:facultyId/professors/:professorId/ratings/:ratingId/vote', (0, express_validator_1.param)('ratingId').isMongoId(), validation_1.handleInputErrors, rating_1.ratingExists, rating_1.ratingBelongsToProfessor, RatingController_1.RatingController.voteHelpful);
+// Ruta para crear un reporte
+router.post('/:facultyId/professors/:professorId/ratings/:ratingId/report', (0, express_validator_1.param)('ratingId').isMongoId().withMessage('ID de calificación inválido'), (0, express_validator_1.body)('reasons').isArray().withMessage('Los motivos deben ser un array'), (0, express_validator_1.body)('reportComment').optional().isString().withMessage('El comentario del reporte debe ser un string'), validation_1.handleInputErrors, RatingController_1.RatingController.createReport);
 exports.default = router;
 //# sourceMappingURL=facultyRoutes.js.map

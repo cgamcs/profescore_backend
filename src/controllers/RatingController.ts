@@ -148,15 +148,16 @@ export class RatingController {
 
   static createReport = async (req: Request, res: Response) => {
     try {
-      const { ratingId } = req.params;  // Utilizar el parámetro de la URL
-      const { reasons, reportComment } = req.body;
+      const { commentId, reasons, reportComment } = req.body;
+      console.log(req.body)
       // Validar que la calificación exista
-      const rating = await Rating.findById(ratingId);
+      const rating = await Rating.findById(commentId);
+      console.log(rating)
       if (!rating) {
         res.status(404).json({ message: 'Calificación no encontrada' });
-        return;
+        return
       }
-    
+  
       // Crear el reporte
       const newReport = new Report({
         commentId: rating._id,
@@ -169,14 +170,17 @@ export class RatingController {
         status: 'pending',
         reportDate: new Date()
       });
-    
+
+      console.log(newReport)
+  
       await newReport.save();
+  
       res.status(201).json(newReport);
     } catch (error) {
       console.error('Error al crear el reporte:', error);
       res.status(500).json({ message: 'Error al crear el reporte' });
     }
-  }  
+  }
 
   static getAllReport = async (req: Request, res: Response) => {
     try {

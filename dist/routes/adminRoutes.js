@@ -12,6 +12,7 @@ const faculty_1 = require("../middleware/faculty");
 const subject_1 = require("../middleware/subject");
 const professor_1 = require("../middleware/professor");
 const DashboardController_1 = require("../controllers/DashboardController");
+const RatingController_1 = require("../controllers/RatingController");
 const router = (0, express_1.Router)();
 // --- Rutas de autenticación de Admin ---
 // Ruta pública para que crear un administrador
@@ -75,5 +76,10 @@ router.get('/faculty/:facultyId/professor/:professorId', (0, express_validator_1
 router.put('/faculty/:facultyId/professor/:professorId', (0, express_validator_1.body)('name').notEmpty().withMessage('El nombre del profesor es obligatorio'), (0, express_validator_1.body)('department').notEmpty().withMessage('El departamento es obligatorio'), (0, express_validator_1.body)('biography').notEmpty().withMessage('La biografía es obligatoria'), validation_1.handleInputErrors, ProfessorController_1.ProfessorController.updateProfessor);
 // Eliminar profesor
 router.delete('/faculty/:facultyId/professor/:professorId', (0, express_validator_1.param)('professorId').isMongoId().withMessage('ID no válido'), validation_1.handleInputErrors, ProfessorController_1.ProfessorController.deleteProfessor);
+// **** REPORTES ****
+router.get('/reports', RatingController_1.RatingController.getAllReport);
+router.get('/reports/:id', RatingController_1.RatingController.getReportById);
+router.delete('/reports/:id', RatingController_1.RatingController.deleteReport);
+router.put('/reports/:id/reject', RatingController_1.RatingController.rejectReport);
 exports.default = router;
 //# sourceMappingURL=adminRoutes.js.map
