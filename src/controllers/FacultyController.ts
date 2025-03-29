@@ -187,28 +187,41 @@ export class FacultyController {
         }
     };
 
-    static deleteFaculty = async (req, res) => {
-        const { id } = req.params;
-        const { name, abbreviation, departments } = req.body;
-
+    static deleteFaculty = async (req: Request, res: Response) => {
+        const { facultyId } = req.params;
+    
         try {
-            // Editar la facultad
-            const faculty = await Faculty.findByIdAndUpdate(
-                id,
-                { name, abbreviation, departments },
-                { new: true }
-            );
-
+            // Buscar la facultad por su ID
+            const faculty = await Faculty.findById(facultyId);
+    
             if (!faculty) {
-                return res.status(404).json({ message: 'Facultad no encontrada' });
+                res.status(404).json({ message: 'Facultad no encontrada' });
+                return;
             }
-
-            // Actualizar departamentos
-            await updateDepartments(id, departments);
-
-            res.json(faculty);
+    
+            // Eliminar la facultad
+            await Faculty.findByIdAndDelete(facultyId);
+    
+            // Eliminar los departamentos asociados a la facultad
+            await Department.deleteMany({ faculty: facultyId });
+    
+            // Eliminar los profesores asociados a la facultad
+            await Professor.deleteMany({ faculty: facultyId });
+    
+            // Eliminar las materias asociadas a la facultad
+            await Subject.deleteMany({ faculty: facultyId });
+    
+            // Registrar actividad
+            await ActivityLog.create({
+                type: 'DELETE_FACULTY',
+                relatedEntity: facultyId,
+                onModel: 'Faculty'
+            });
+    
+            res.json({ message: 'Facultad eliminada exitosamente' });
         } catch (error) {
-            res.status(500).json({ message: 'Error al editar la facultad', error });
+            console.log(colors.red.bold(`Error al eliminar facultad - ${error.message}`));
+            res.status(500).json({ message: 'Error al eliminar la facultad', error: error.message });
         }
     };
 

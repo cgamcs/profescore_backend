@@ -13,7 +13,7 @@ export async function facultyExists( req: Request, res: Response, next: NextFunc
             })
 
         if(!faculty) {
-            const error = new Error('Facultad no encontrada')
+            const error = new Error('Facultad no encontrada middleware')
             
             res.status(404).json({ error: error.message })
             return
