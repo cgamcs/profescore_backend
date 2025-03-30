@@ -5,22 +5,40 @@ import Rating from '../models/Rating';
 import Department from '../models/Department';
 import Faculty from '../models/Faculty';
 
+// Función para eliminar acentos y convertir a minúsculas
+const normalizeName = (name: string): string => {
+    return name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+};
+
 export class SubjectController {
     static createSubject = async (req: Request, res: Response): Promise<void> => {
         try {
             const { name, credits, description, department, professors } = req.body;
-
+    
+            // Normalizar el nombre de la materia
+            const normalizedName = normalizeName(name);
+    
+            // Verificar que no exista una materia con el mismo nombre normalizado
+            const existingSubject = await Subject.findOne({
+                normalizedName: normalizedName
+            });
+    
+            if (existingSubject) {
+                res.status(400).json({ error: 'Ya existe una materia con ese nombre' });
+                return;
+            }
+    
             // Verificar que el departamento pertenezca a la facultad
             const departmentExists = await Department.findOne({
                 _id: department,
                 faculty: req.faculty.id
             });
-
+    
             if (!departmentExists) {
                 res.status(400).json({ error: 'Departamento no válido' });
                 return;
             }
-
+    
             // Crear la materia y asignarle el departamento
             const subject = new Subject({
                 name,
@@ -28,11 +46,12 @@ export class SubjectController {
                 description,
                 department, // Se guarda el ObjectId del departamento
                 faculty: req.faculty.id, // Se asigna la facultad
-                professors
+                professors,
+                normalizedName // Guardar el nombre normalizado en la base de datos
             });
-
+    
             req.faculty.subjects.push(subject.id);
-
+    
             // Guardar la materia y actualizar la facultad
             await Promise.allSettled([subject.save(), req.faculty.save()]);
             res.send('Materia creada correctamente');

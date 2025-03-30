@@ -10,6 +10,7 @@ export interface ISubject extends Document {
     department: PopulatedDoc<IDepartment & Document>;
     faculty: PopulatedDoc<IFaculty & Document>; // Referencias a facultad
     professors: PopulatedDoc<IProfessor & Document>[];
+    normalizedName: string; // Nuevo campo para el nombre normalizado
 }
 
 const SubjectSchema: Schema = new Schema({
@@ -44,7 +45,12 @@ const SubjectSchema: Schema = new Schema({
             type: Types.ObjectId,
             ref: 'Professor'
         }
-    ]
+    ],
+    normalizedName: {
+        type: String,
+        required: true,
+        unique: true
+    } // Nuevo campo para el nombre normalizado
 }, { timestamps: true });
 
 SubjectSchema.index(
