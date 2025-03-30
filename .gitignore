@@ -6,3 +6,4 @@ dist
 excel-to-array.js
 materias.json
 importar-materias.ts
+importar-maestros.ts
