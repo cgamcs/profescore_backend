@@ -3,6 +3,6 @@ node_modules
 package-lock
 
 dist
-excel-to-array
-materias
-importar-materias
+excel-to-array.js
+materias.json
+importar-materias.ts
