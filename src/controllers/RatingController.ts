@@ -29,15 +29,33 @@ export class RatingController {
         return;
       }
 
-      // Verificar si el profesor ya está asociado con la materia
-      if (!professor.subjects.some(sub => sub.toString() === subject)) {
-        professor.subjects.push(subject);
+      // Convertir subject a ObjectId para comparación consistente
+      const subjectObjectId = new mongoose.Types.ObjectId(subject);
+      
+      // Verificar si el profesor ya está asociado con la materia usando .equals() para comparar ObjectIds
+      const subjectExists = professor.subjects.some(sub => 
+        sub instanceof mongoose.Types.ObjectId ? 
+        sub.equals(subjectObjectId) : 
+        new mongoose.Types.ObjectId(sub).equals(subjectObjectId)
+      );
+      
+      if (!subjectExists) {
+        console.log('Añadiendo materia al profesor:', subject);
+        professor.subjects.push(subjectObjectId);
         await professor.save();
+        console.log('Materias del profesor después de guardar:', professor.subjects);
       }
 
       // Verificar si la materia ya tiene al profesor asociado
       const professorObjectId = new mongoose.Types.ObjectId(professorId);
-      if (!subjectDoc.professors.includes(professorObjectId)) {
+      const professorExists = subjectDoc.professors.some(prof => 
+        prof instanceof mongoose.Types.ObjectId ? 
+        prof.equals(professorObjectId) : 
+        new mongoose.Types.ObjectId(prof.toString()).equals(professorObjectId)
+      );
+      
+      if (!professorExists) {
+        console.log('Añadiendo profesor a la materia:', professorId);
         subjectDoc.professors.push(professorObjectId);
         await subjectDoc.save();
       }
@@ -50,8 +68,8 @@ export class RatingController {
         attendance,
         wouldRetake,
         comment,
-        subject,
-        professor: professorId,
+        subject: subjectObjectId,
+        professor: professorObjectId,
       });
 
       const savedRating = await newRating.save();
@@ -67,7 +85,7 @@ export class RatingController {
         details: error.message
       });
     }
-  }
+}
 
   static getProfessorRatings = async (req: Request, res: Response) => {
     try {
