@@ -14,32 +14,40 @@ export class SubjectController {
     static createSubject = async (req: Request, res: Response): Promise<void> => {
         try {
             const { name, credits, description, department, professors } = req.body;
-    
+
             // Normalizar el nombre de la materia
             const normalizedName = normalizeName(name);
-    
+
             // Verificar que no exista una materia con el mismo nombre normalizado en la misma facultad
             const existingSubject = await Subject.findOne({
                 normalizedName: normalizedName,
                 faculty: req.faculty.id
             });
-    
+
+            console.log('Intentando crear materia:', {
+                nombreOriginal: name,
+                nombreNormalizado: normalizedName,
+                facultadActual: req.faculty.id
+            });
+
+            console.log('Resultado de búsqueda existente:', existingSubject);
+
             if (existingSubject) {
                 res.status(400).json({ error: 'Ya existe una materia con ese nombre en esta facultad' });
                 return;
             }
-    
+
             // Verificar que el departamento pertenezca a la facultad
             const departmentExists = await Department.findOne({
                 _id: department,
                 faculty: req.faculty.id
             });
-    
+
             if (!departmentExists) {
                 res.status(400).json({ error: 'Departamento no válido' });
                 return;
             }
-    
+
             // Crear la materia y asignarle el departamento
             const subject = new Subject({
                 name,
@@ -50,11 +58,26 @@ export class SubjectController {
                 professors,
                 normalizedName // Guardar el nombre normalizado en la base de datos
             });
-    
-            req.faculty.subjects.push(subject.id);
-    
-            // Guardar la materia y actualizar la facultad
-            await Promise.allSettled([subject.save(), req.faculty.save()]);
+
+            console.log(subject)
+
+            // Revisar si alguna de las operaciones falló
+            const results = await Promise.allSettled([subject.save(), req.faculty.save()]);
+            console.log('Resultados de guardado:', results);
+
+            // Verificar si alguna operación falló
+            const failed = results.some(result => result.status === 'rejected');
+            if (failed) {
+                const errors = results
+                    .filter(result => result.status === 'rejected')
+                    .map(result => (result as PromiseRejectedResult).reason);
+                console.error('Errores al guardar:', errors);
+                res.status(500).json({ error: 'Error al guardar los datos' });
+                return;
+            }
+
+            // Si todo fue bien, confirmar
+            console.log('Materia guardada con ID:', subject._id);
             res.send('Materia creada correctamente');
         } catch (error) {
             console.error('Error al crear materia:', error);

@@ -17,7 +17,6 @@ const SubjectSchema: Schema = new Schema({
     name: {
         type: String,
         required: [true, 'El nombre de la materia es obligatorio'],
-        unique: false,
         trim: true
     },
     credits: {
@@ -48,16 +47,17 @@ const SubjectSchema: Schema = new Schema({
     ],
     normalizedName: {
         type: String,
-        required: true,
-        unique: true
-    } // Nuevo campo para el nombre normalizado
+        required: true
+    } // Ya no es único por sí solo
 }, { timestamps: true });
 
+// Eliminado el índice anterior basado solo en name y faculty
+// Creado un nuevo índice compuesto para normalizedName y faculty
 SubjectSchema.index(
-    { name: 1, faculty: 1 },
+    { normalizedName: 1, faculty: 1 },
     {
         unique: true,
-        name: "unique_subject_per_faculty",
+        name: "unique_normalized_name_per_faculty",
         partialFilterExpression: { faculty: { $exists: true } }
     }
 );
