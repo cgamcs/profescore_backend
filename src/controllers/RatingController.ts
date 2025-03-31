@@ -30,7 +30,7 @@ export class RatingController {
       }
 
       // Verificar si el profesor ya está asociado con la materia
-      if (!professor.subjects.includes(subject)) {
+      if (!professor.subjects.some(sub => sub.toString() === subject)) {
         professor.subjects.push(subject);
         await professor.save();
       }
@@ -165,7 +165,7 @@ export class RatingController {
         res.status(404).json({ message: 'Calificación no encontrada' });
         return
       }
-  
+
       // Crear el reporte
       const newReport = new Report({
         commentId: rating._id,
@@ -180,9 +180,9 @@ export class RatingController {
       });
 
       console.log(newReport)
-  
+
       await newReport.save();
-  
+
       res.status(201).json(newReport);
     } catch (error) {
       console.error('Error al crear el reporte:', error);
@@ -196,7 +196,7 @@ export class RatingController {
         .populate('commentId', 'general comment createdAt')
         .populate('teacherId', 'name biography department')
         .exec();
-  
+
       res.status(200).json(reports);
     } catch (error) {
       console.error('Error al obtener los reportes:', error);
@@ -210,12 +210,12 @@ export class RatingController {
         .populate('commentId', 'general comment createdAt')
         .populate('teacherId', 'name biography department')
         .exec();
-  
+
       if (!report) {
         res.status(404).json({ message: 'Reporte no encontrado' });
         return
       }
-  
+
       res.status(200).json(report);
     } catch (error) {
       console.error('Error al obtener el reporte:', error);
