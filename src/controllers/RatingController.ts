@@ -29,35 +29,15 @@ export class RatingController {
         return;
       }
 
-      // Convertir subject a ObjectId para comparación consistente
-      const subjectObjectId = new mongoose.Types.ObjectId(subject);
+      // Convert subject IDs to strings for comparison
+      const professorSubjectIds = professor.subjects.map(s => s.toString());
       
-      // Verificar si el profesor ya está asociado con la materia usando .equals() para comparar ObjectIds
-      const subjectExists = professor.subjects.some(sub => 
-        sub instanceof mongoose.Types.ObjectId ? 
-        sub.equals(subjectObjectId) : 
-        new mongoose.Types.ObjectId(sub).equals(subjectObjectId)
-      );
-      
-      if (!subjectExists) {
+      // Check if the subject is not already in the professor's subjects array
+      if (!professorSubjectIds.includes(subject.toString())) {
         console.log('Añadiendo materia al profesor:', subject);
-        professor.subjects.push(subjectObjectId);
+        professor.subjects.push(subject);
         await professor.save();
         console.log('Materias del profesor después de guardar:', professor.subjects);
-      }
-
-      // Verificar si la materia ya tiene al profesor asociado
-      const professorObjectId = new mongoose.Types.ObjectId(professorId);
-      const professorExists = subjectDoc.professors.some(prof => 
-        prof instanceof mongoose.Types.ObjectId ? 
-        prof.equals(professorObjectId) : 
-        new mongoose.Types.ObjectId(prof.toString()).equals(professorObjectId)
-      );
-      
-      if (!professorExists) {
-        console.log('Añadiendo profesor a la materia:', professorId);
-        subjectDoc.professors.push(professorObjectId);
-        await subjectDoc.save();
       }
 
       const newRating = new Rating({
@@ -68,8 +48,8 @@ export class RatingController {
         attendance,
         wouldRetake,
         comment,
-        subject: subjectObjectId,
-        professor: professorObjectId,
+        subject,
+        professor: professorId,
       });
 
       const savedRating = await newRating.save();
