@@ -51,6 +51,7 @@ export class FacultyController {
             const professors = await Professor.find()
                 .populate('faculty', 'abbreviation')
                 .populate('subjects', 'name')
+                .populate('department', 'name')
                 .sort({ 'ratingStats.averageGeneral': -1, 'ratingStats.totalRatings': -1 })
                 .limit(3);
 
@@ -276,7 +277,8 @@ export class FacultyController {
         try {
             const professors = await Professor.find()
                 .populate('faculty', 'abbreviation')
-                .populate('subjects', 'name');
+                .populate('subjects', 'name')
+                .populate('department', 'name');
 
             // Ordenar por calificación y cantidad de reseñas
             const sortedProfessors = professors
