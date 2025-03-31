@@ -19,7 +19,7 @@ export async function professorExists( req: Request, res: Response, next: NextFu
         }
 
         const professor = await Professor.findById(professorId)
-            .populate('subjects')
+            .populate('subjects', 'name')
             .populate('department', 'name')
 
         if(!professor) {
