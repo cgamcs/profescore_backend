@@ -18,13 +18,14 @@ export class SubjectController {
             // Normalizar el nombre de la materia
             const normalizedName = normalizeName(name);
     
-            // Verificar que no exista una materia con el mismo nombre normalizado
+            // Verificar que no exista una materia con el mismo nombre normalizado en la misma facultad
             const existingSubject = await Subject.findOne({
-                normalizedName: normalizedName
+                normalizedName: normalizedName,
+                faculty: req.faculty.id
             });
     
             if (existingSubject) {
-                res.status(400).json({ error: 'Ya existe una materia con ese nombre' });
+                res.status(400).json({ error: 'Ya existe una materia con ese nombre en esta facultad' });
                 return;
             }
     
