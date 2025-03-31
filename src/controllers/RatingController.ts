@@ -29,9 +29,17 @@ export class RatingController {
         return;
       }
 
+      // Verificar si el profesor ya está asociado con la materia
       if (!professor.subjects.includes(subject)) {
         professor.subjects.push(subject);
         await professor.save();
+      }
+
+      // Verificar si la materia ya tiene al profesor asociado
+      const professorObjectId = new mongoose.Types.ObjectId(professorId);
+      if (!subjectDoc.professors.includes(professorObjectId)) {
+        subjectDoc.professors.push(professorObjectId);
+        await subjectDoc.save();
       }
 
       const newRating = new Rating({
