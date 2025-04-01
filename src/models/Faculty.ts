@@ -20,7 +20,7 @@ const FacultySchema: Schema = new Schema({
         type: String,
         required: [true, 'La abreviatura es obligatoria'],
         uppercase: true,
-        maxlength: [6, 'La abreviatura no puede exceder 6 caracteres']
+        maxlength: [8, 'La abreviatura no puede exceder 6 caracteres']
     },
     departments: [
         {
