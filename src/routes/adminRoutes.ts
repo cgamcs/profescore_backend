@@ -189,9 +189,11 @@ router.delete('/faculty/:facultyId/professor/:professorId',
 );
 
 // **** REPORTES ****
-router.get('/reports', RatingController.getAllReport);
-router.get('/reports/:id', RatingController.getReportById);
-router.delete('/reports/:id', RatingController.deleteReport);
-router.put('/reports/:id/reject', RatingController.rejectReport);
+router.get('/reports', RatingController.getAllReports);
+router.get('/reports/:reportId', RatingController.getReportById);
+
+// Nuevas rutas para manejar reportes
+router.delete('/reports/:reportId/delete-comment', RatingController.deleteReportedRating);
+router.put('/reports/:reportId/reject', RatingController.rejectReport);
 
 export default router;

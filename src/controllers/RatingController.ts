@@ -81,6 +81,61 @@ export class RatingController {
     }
   }
 
+  static deleteReportedRating = async (req: Request, res: Response) => {
+    try {
+      console.log('Petición de eliminación de comentario reportado');
+      console.log('Params:', req.params);
+
+      const { reportId } = req.params;
+
+      if (!reportId) {
+        res.status(400).json({ error: 'Se requiere ID del reporte' });
+        return
+      }
+
+      // 1. Encontrar el reporte
+      const report = await Report.findById(reportId);
+
+      if (!report) {
+        res.status(404).json({ error: 'Reporte no encontrado' });
+        return
+      }
+
+      // 2. Obtener el ID del comentario y del profesor
+      const commentId = report.commentId;
+      const professorId = report.teacherId;
+
+      if (!commentId || !professorId) {
+        res.status(400).json({ error: 'El reporte no contiene IDs válidos de comentario o profesor' });
+        return
+      }
+
+      // 3. Eliminar el comentario (rating)
+      await Rating.findByIdAndDelete(commentId);
+      console.log('Comentario eliminado:', commentId);
+
+      // 4. Actualizar el estado del reporte a 'deleted'
+      report.status = 'deleted';
+      await report.save();
+      console.log('Reporte marcado como eliminado');
+
+      // 5. Actualizar las estadísticas del profesor
+      await this.updateProfessorStats(professorId.toString());
+      console.log('Estadísticas del profesor actualizadas');
+
+      res.status(200).json({ 
+        message: 'Comentario eliminado correctamente',
+        report: report
+      });
+    } catch (error) {
+      console.error('Error al eliminar comentario reportado:', error);
+      res.status(500).json({
+        error: 'Error al eliminar el comentario reportado',
+        details: error.message
+      });
+    }
+  }
+
   static voteHelpful = async (req: Request, res: Response) => {
     try {
       const { type, userId } = req.body; // Obtener userId del cuerpo
@@ -188,7 +243,7 @@ export class RatingController {
     }
   }
 
-  static getAllReport = async (req: Request, res: Response) => {
+  static getAllReports = async (req: Request, res: Response) => {
     try {
       const reports = await Report.find()
         .populate('commentId', 'general comment createdAt')
@@ -222,6 +277,7 @@ export class RatingController {
   }
 
   static deleteReport = async (req: Request, res: Response) => {
+    console.log('Petición DELETE recibida para report ID:', req.params.id);
     try {
       const report = await Report.findByIdAndDelete(req.params.id);
       if (!report) {
