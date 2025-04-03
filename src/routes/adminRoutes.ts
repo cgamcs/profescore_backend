@@ -137,7 +137,6 @@ router.post('/faculty/:facultyId/professor',
     body('subject').isMongoId().withMessage('ID de materia inválido'),
     body('name').notEmpty().withMessage('El nombre del profesor es obligatorio'),
     body('department').notEmpty().withMessage('El departamento es obligatorio'),
-    body('biography').notEmpty().withMessage('La biografía es obligatoria'),
     handleInputErrors,
     ProfessorController.createProfessor
 );
@@ -148,7 +147,6 @@ router.post('/faculty/:facultyId/professor/multiple',
     body('subjects.*').isMongoId().withMessage('ID de materia inválido'),
     body('name').notEmpty().withMessage('El nombre del profesor es obligatorio'),
     body('department').notEmpty().withMessage('El departamento es obligatorio'),
-    body('biography').notEmpty().withMessage('La biografía es obligatoria'),
     handleInputErrors,
     ProfessorController.createProfessorWithMultipleSubjects
 );
@@ -176,7 +174,6 @@ router.get('/faculty/:facultyId/professor/:professorId',
 router.put('/faculty/:facultyId/professor/:professorId',
     body('name').notEmpty().withMessage('El nombre del profesor es obligatorio'),
     body('department').notEmpty().withMessage('El departamento es obligatorio'),
-    body('biography').notEmpty().withMessage('La biografía es obligatoria'),
     handleInputErrors,
     ProfessorController.updateProfessor
 );

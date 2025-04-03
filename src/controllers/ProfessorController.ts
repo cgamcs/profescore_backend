@@ -10,7 +10,7 @@ export class ProfessorController {
     static createProfessor = async (req: Request, res: Response) => {
         try {
             const faculty = req.faculty;
-            const { name, department, biography, subject: subjectId } = req.body;
+            const { name, department, subject: subjectId } = req.body;
 
             const subject = await Subject.findById(subjectId);
             if (!subject) {
@@ -45,7 +45,6 @@ export class ProfessorController {
             const newProfessor = new Professor({
                 name,
                 department,
-                biography,
                 faculty: faculty.id,
                 subjects: [subject.id]
             });
@@ -71,9 +70,9 @@ export class ProfessorController {
     static createProfessorWithMultipleSubjects = async (req: Request, res: Response) => {
         try {
             const faculty = req.faculty;
-            const { name, department, biography, subjects: subjectIds } = req.body;
+            const { name, department, subjects: subjectIds } = req.body;
 
-            console.log('Received data for multiple subjects:', { name, department, biography, subjectIds });
+            console.log('Received data for multiple subjects:', { name, department, subjectIds });
 
             const subjects = await Subject.find({ _id: { $in: subjectIds } });
             if (subjects.length !== subjectIds.length) {
@@ -108,7 +107,6 @@ export class ProfessorController {
             const newProfessor = new Professor({
                 name,
                 department,
-                biography,
                 faculty: faculty.id,
                 subjects: subjects.map(subject => subject.id)
             });
@@ -200,61 +198,61 @@ export class ProfessorController {
         try {
             const professor = req.professor;
             const { subjects: newSubjects, ...rest } = req.body;
-    
+
             if (rest.name) {
                 const existing = await Professor.findOne({
                     name: rest.name.trim(),
                     faculty: professor.faculty,
                     _id: { $ne: professor.id }
                 });
-    
+
                 if (existing) {
                     res.status(400).json({ error: 'Ya existe un profesor con este nombre' });
                     return;
                 }
             }
-    
+
             // Update basic professor information
             Object.assign(professor, rest);
-    
+
             // Handle subjects update
             if (newSubjects && Array.isArray(newSubjects)) {
                 // Convert and validate subject IDs
                 const validSubjects = newSubjects
                     .filter(id => mongoose.Types.ObjectId.isValid(id))
                     .map(id => new mongoose.Types.ObjectId(id));
-    
+
                 if (validSubjects.length !== newSubjects.length) {
                     res.status(400).json({ error: "Algunos IDs de materias son inválidos" });
                     return;
                 }
-    
+
                 // Replace subjects array with new subjects
                 professor.subjects = validSubjects;
-    
+
                 // Update the subjects collection to reference this professor
                 await Subject.updateMany(
                     { _id: { $in: validSubjects } },
                     { $addToSet: { professors: professor._id } }
                 );
-    
+
                 // Remove this professor from subjects that are no longer associated
                 await Subject.updateMany(
-                    { 
+                    {
                         _id: { $nin: validSubjects },
-                        professors: professor._id 
+                        professors: professor._id
                     },
                     { $pull: { professors: professor._id } }
                 );
             }
-    
+
             await professor.save();
-    
+
             // Fetch the updated professor with populated fields to return
             const updatedProfessor = await Professor.findById(professor._id)
                 .populate('subjects', 'name')
                 .populate('department', 'name');
-    
+
             res.json({
                 message: 'Profesor actualizado correctamente',
                 professor: updatedProfessor
