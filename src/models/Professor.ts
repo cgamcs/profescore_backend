@@ -31,7 +31,7 @@ const ProfessorSchema: Schema = new Schema({
     department: {
         type: Types.ObjectId,
         ref: 'Department',
-        required: true
+        required: false
     },
     faculty: {
         type: Types.ObjectId,
