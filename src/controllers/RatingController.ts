@@ -206,7 +206,21 @@ export class RatingController {
       }
     ]);
 
-    if (stats.length > 0) {
+    // Si no hay estadísticas (no hay comentarios), establecer valores por defecto
+    if (stats.length === 0) {
+      await Professor.findByIdAndUpdate(professorId, {
+        ratingStats: {
+          totalRatings: 0,
+          averageGeneral: 0,
+          averageExplanation: 0,
+          averageAccessibility: 0,
+          averageDifficulty: 0,
+          averageAttendance: 0,
+          wouldRetakeCount: 0,
+          wouldRetakePercentage: 0
+        }
+      });
+    } else {
       await Professor.findByIdAndUpdate(professorId, {
         ratingStats: {
           ...stats[0],

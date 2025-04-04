@@ -51,7 +51,6 @@ router.get('/:facultyId/professors/:professorId',
 router.post('/:facultyId/professors',
   body('subject').isMongoId().withMessage('ID de materia inválido'),
   body('name').notEmpty().withMessage('El nombre del profesor es obligatorio'),
-  body('department').notEmpty().withMessage('El departamento es obligatorio'),
   handleInputErrors,
   ProfessorController.createProfessor
 );

@@ -117,7 +117,6 @@ router.get('/faculty/:facultyId/subject/:subjectId',
 // Actualizar materia
 router.put('/faculty/:facultyId/subject/:subjectId',
     body('name').notEmpty().withMessage('El nombre de la materia es obligatorio'),
-    body('department').notEmpty().withMessage('El departamento de la materia es obligatorio'),
     body('credits').isNumeric().withMessage('Los créditos deben ser un número'),
     handleInputErrors,
     SubjectController.updateSubject
@@ -136,7 +135,6 @@ router.delete('/faculty/:facultyId/subject/:subjectId',
 router.post('/faculty/:facultyId/professor',
     body('subject').isMongoId().withMessage('ID de materia inválido'),
     body('name').notEmpty().withMessage('El nombre del profesor es obligatorio'),
-    body('department').notEmpty().withMessage('El departamento es obligatorio'),
     handleInputErrors,
     ProfessorController.createProfessor
 );
@@ -146,7 +144,6 @@ router.post('/faculty/:facultyId/professor/multiple',
     body('subjects').isArray().withMessage('Debe ser un arreglo de materias'),
     body('subjects.*').isMongoId().withMessage('ID de materia inválido'),
     body('name').notEmpty().withMessage('El nombre del profesor es obligatorio'),
-    body('department').notEmpty().withMessage('El departamento es obligatorio'),
     handleInputErrors,
     ProfessorController.createProfessorWithMultipleSubjects
 );
@@ -173,7 +170,6 @@ router.get('/faculty/:facultyId/professor/:professorId',
 // Actualizar profesor
 router.put('/faculty/:facultyId/professor/:professorId',
     body('name').notEmpty().withMessage('El nombre del profesor es obligatorio'),
-    body('department').notEmpty().withMessage('El departamento es obligatorio'),
     handleInputErrors,
     ProfessorController.updateProfessor
 );
