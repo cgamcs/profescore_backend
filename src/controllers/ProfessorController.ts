@@ -11,18 +11,33 @@ export class ProfessorController {
         try {
             const faculty = req.faculty;
             const { name, department, subject: subjectId } = req.body;
-
+    
+            if (!name || typeof name !== 'string') {
+                res.status(400).json({ error: 'El nombre del profesor es requerido' });
+                return
+            }
+    
             const subject = await Subject.findById(subjectId);
             if (!subject) {
                 res.status(404).json({ error: 'Materia no encontrada' });
-                return;
+                return
             }
-
-            const existingProfessor = await Professor.findOne({
-                name: name.trim(),
-                faculty: faculty.id
+    
+            // Normalizar el nombre para búsqueda (quitar acentos, convertir a minúsculas)
+            const normalizedNameSearch = name.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    
+            // Formatear el nombre en capitalize para guardarlo
+            const formattedName = name.trim().split(' ')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                .join(' ');
+    
+            // Buscar profesor existente con nombre normalizado
+            const existingProfessors = await Professor.find({ faculty: faculty.id });
+            const existingProfessor = existingProfessors.find(prof => {
+                const profNormalizedName = prof.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+                return profNormalizedName === normalizedNameSearch;
             });
-
+    
             if (existingProfessor) {
                 const subjectIdStr = subject.id.toString();
                 const existingSubjects = existingProfessor.subjects.map(id => id.toString());
@@ -30,61 +45,76 @@ export class ProfessorController {
                     existingProfessor.subjects.push(subject.id);
                     await existingProfessor.save();
                 }
-
+    
                 const professorIdStr = existingProfessor.id.toString();
                 const subjectProfessors = subject.professors.map(id => id.toString());
                 if (!subjectProfessors.includes(professorIdStr)) {
                     subject.professors.push(existingProfessor.id);
                     await subject.save();
                 }
-
+    
                 res.status(201).send('Profesor creado correctamente');
-                return;
+                return
             }
-
+    
             const newProfessor = new Professor({
-                name,
+                name: formattedName,
                 department,
                 faculty: faculty.id,
                 subjects: [subject.id]
             });
-
+    
             subject.professors.push(newProfessor.id);
-
+    
             await Promise.allSettled([
                 newProfessor.save(),
                 subject.save()
             ]);
-
+    
             res.json({
                 message: 'Profesor creado y asignado a la materia',
                 professor: newProfessor
             });
-
+    
         } catch (error) {
             console.error('Error en createProfessor:', error.message);
             res.status(500).json({ error: 'Hubo un error al crear el profesor' });
         }
     }
-
+    
     static createProfessorWithMultipleSubjects = async (req: Request, res: Response) => {
         try {
             const faculty = req.faculty;
             const { name, department, subjects: subjectIds } = req.body;
-
+    
+            if (!name || typeof name !== 'string') {
+                res.status(400).json({ error: 'El nombre del profesor es requerido' });
+                return
+            }
+    
             console.log('Received data for multiple subjects:', { name, department, subjectIds });
-
+    
             const subjects = await Subject.find({ _id: { $in: subjectIds } });
             if (subjects.length !== subjectIds.length) {
                 res.status(404).json({ error: 'Algunas materias no fueron encontradas' });
-                return;
+                return
             }
-
-            const existingProfessor = await Professor.findOne({
-                name: name.trim(),
-                faculty: faculty.id
+    
+            // Normalizar el nombre para búsqueda (quitar acentos, convertir a minúsculas)
+            const normalizedNameSearch = name.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    
+            // Formatear el nombre en capitalize para guardarlo
+            const formattedName = name.trim().split(' ')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                .join(' ');
+    
+            // Buscar profesor existente con nombre normalizado
+            const existingProfessors = await Professor.find({ faculty: faculty.id });
+            const existingProfessor = existingProfessors.find(prof => {
+                const profNormalizedName = prof.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+                return profNormalizedName === normalizedNameSearch;
             });
-
+    
             if (existingProfessor) {
                 const existingSubjectIds = existingProfessor.subjects.map(id => id.toString());
                 subjects.forEach(subject => {
@@ -101,33 +131,33 @@ export class ProfessorController {
                 await existingProfessor.save();
                 await Promise.allSettled(subjects.map(subject => subject.save()));
                 res.status(201).send('Profesor actualizado con nuevas materias');
-                return;
+                return
             }
-
+    
             const newProfessor = new Professor({
-                name,
+                name: formattedName,
                 department,
                 faculty: faculty.id,
                 subjects: subjects.map(subject => subject.id)
             });
-
+    
             subjects.forEach(subject => {
                 subject.professors.push(newProfessor.id);
             });
-
+    
             await Promise.allSettled([
                 newProfessor.save(),
                 ...subjects.map(subject => subject.save())
             ]);
-
+    
             console.log('Professor saved:', newProfessor);
             console.log('Subjects updated:', subjects);
-
+    
             res.json({
                 message: 'Profesor creado y asignado a las materias',
                 professor: newProfessor
             });
-
+    
         } catch (error) {
             console.error('Error en createProfessorWithMultipleSubjects:', error.message);
             res.status(500).json({ error: 'Hubo un error al crear el profesor' });
