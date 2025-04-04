@@ -40,6 +40,15 @@ export class RatingController {
         console.log('Materias del profesor después de guardar:', professor.subjects);
       }
 
+      // Check if the professor is not already in the subject's professors array
+      const subjectProfessorIds = subjectDoc.professors.map(p => p.toString());
+      if (!subjectProfessorIds.includes(professorId.toString())) {
+        console.log('Añadiendo profesor a la materia:', professorId);
+        subjectDoc.professors.push(new mongoose.Types.ObjectId(professorId));
+        await subjectDoc.save();
+        console.log('Profesores de la materia después de guardar:', subjectDoc.professors);
+      }
+
       const newRating = new Rating({
         general,
         explanation,
@@ -65,7 +74,7 @@ export class RatingController {
         details: error.message
       });
     }
-}
+  }
 
   static getProfessorRatings = async (req: Request, res: Response) => {
     try {

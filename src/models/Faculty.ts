@@ -26,7 +26,7 @@ const FacultySchema: Schema = new Schema({
         {
             type: Types.ObjectId,
             ref: 'Department',
-            required: true
+            required: false
         }
     ],
     subjects: [

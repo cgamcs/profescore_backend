@@ -37,26 +37,28 @@ export class SubjectController {
                 return;
             }
 
-            // Verificar que el departamento pertenezca a la facultad
-            const departmentExists = await Department.findOne({
-                _id: department,
-                faculty: req.faculty.id
-            });
+            // Verificar que el departamento pertenezca a la facultad solo si se proporciona
+            if (department) {
+                const departmentExists = await Department.findOne({
+                    _id: department,
+                    faculty: req.faculty.id
+                });
 
-            if (!departmentExists) {
-                res.status(400).json({ error: 'Departamento no válido' });
-                return;
+                if (!departmentExists) {
+                    res.status(400).json({ error: 'Departamento no válido' });
+                    return;
+                }
             }
 
-            // Crear la materia y asignarle el departamento
+            // Crear la materia
             const subject = new Subject({
                 name,
                 credits,
                 description,
-                department, // Se guarda el ObjectId del departamento
-                faculty: req.faculty.id, // Se asigna la facultad
+                department, // Ahora es opcional
+                faculty: req.faculty.id,
                 professors,
-                normalizedName // Guardar el nombre normalizado en la base de datos
+                normalizedName
             });
 
             console.log(subject)
@@ -152,15 +154,17 @@ export class SubjectController {
         try {
             const { name, department, credits, description } = req.body;
 
-            // Verificar que el departamento pertenezca a la facultad
-            const departmentExists = await Department.findOne({
-                _id: department,
-                faculty: req.faculty.id
-            });
+            // Verificar que el departamento pertenezca a la facultad solo si se proporciona
+            if (department) {
+                const departmentExists = await Department.findOne({
+                    _id: department,
+                    faculty: req.faculty.id
+                });
 
-            if (!departmentExists) {
-                res.status(400).json({ error: 'Departamento no válido' });
-                return;
+                if (!departmentExists) {
+                    res.status(400).json({ error: 'Departamento no válido' });
+                    return;
+                }
             }
 
             // Actualizar la materia

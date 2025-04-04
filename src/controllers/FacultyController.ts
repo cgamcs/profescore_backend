@@ -17,17 +17,18 @@ declare module 'express' {
 export class FacultyController {
     static createFaculty = async (req: Request, res: Response) => {
         try {
-            const { name, abbreviation, departments } = req.body; // departments: array de nombres
+            const { name, abbreviation, departments } = req.body;
             // 1. Crear la facultad
             const faculty = new Faculty({ name, abbreviation });
 
-            // 2. Crear departamentos y asignarlos a la facultad
-            const createdDepartments = await Department.insertMany(
-                departments.map(name => ({ name, faculty: faculty._id }))
-            );
+            // 2. Crear departamentos y asignarlos a la facultad solo si se proporcionan
+            if (departments && departments.length > 0) {
+                const createdDepartments = await Department.insertMany(
+                    departments.map(name => ({ name, faculty: faculty._id }))
+                );
 
-            // Ensure the department property is typed correctly
-            faculty.departments = createdDepartments.map(d => d._id as Types.ObjectId);
+                faculty.departments = createdDepartments.map(d => d._id as Types.ObjectId);
+            }
 
             await faculty.save();
 
