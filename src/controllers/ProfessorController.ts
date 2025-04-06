@@ -75,6 +75,8 @@ export class ProfessorController {
                 message: 'Profesor creado y asignado a la materia',
                 professor: newProfessor
             });
+
+            console.log(newProfessor, subject)
     
         } catch (error) {
             console.error('Error en createProfessor:', error.message);
