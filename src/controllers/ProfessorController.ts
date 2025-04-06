@@ -59,7 +59,7 @@ export class ProfessorController {
     
             const newProfessor = new Professor({
                 name: formattedName,
-                department,
+                department: department === "" ? undefined : department,
                 faculty: faculty.id,
                 subjects: [subject.id]
             });
