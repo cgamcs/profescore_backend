@@ -66,18 +66,20 @@ export class ProfessorController {
     
             subject.professors.push(newProfessor.id);
     
-            await Promise.allSettled([
-                newProfessor.save(),
-                subject.save()
-            ]);
+            const savedProfessor = await newProfessor.save();
+            console.log("Profesor guardado con éxito:", savedProfessor);
+            
+            const savedSubject = await subject.save();
+            console.log("Materia actualizada con éxito:", savedSubject);
+            
+            // Verificar de nuevo después de guardar
+            const verifyProfessor = await Professor.findById(newProfessor._id);
+            console.log("Verificación del profesor guardado:", verifyProfessor);
     
             res.json({
                 message: 'Profesor creado y asignado a la materia',
                 professor: newProfessor
             });
-
-            console.log(newProfessor, subject)
-    
         } catch (error) {
             console.error('Error en createProfessor:', error.message);
             res.status(500).json({ error: 'Hubo un error al crear el profesor' });
