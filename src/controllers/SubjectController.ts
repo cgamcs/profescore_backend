@@ -55,7 +55,7 @@ export class SubjectController {
                 name,
                 credits,
                 description,
-                department, // Ahora es opcional
+                department: department === "" ? undefined : department, // Ahora es opcional
                 faculty: req.faculty.id,
                 professors,
                 normalizedName
