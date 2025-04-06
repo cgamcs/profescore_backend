@@ -28,8 +28,8 @@ router.get('/:facultyId/departments', FacultyController.getFacultyDepartments);
 router.get('/:facultyId/subjects', SubjectController.getFacultySubjects);
 
 router.post('/:facultyId/subjects',
-  body('subject').isMongoId().withMessage('ID de materia inválido'),
-  body('name').notEmpty().withMessage('El nombre del profesor es obligatorio'),
+  body('name').notEmpty().withMessage('El nombre de la materia es obligatorio'),
+  body('credits').isNumeric().withMessage('Los créditos deben ser numéricos'),
   handleInputErrors,
   SubjectController.createSubject
 );
