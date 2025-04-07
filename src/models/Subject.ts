@@ -23,7 +23,7 @@ const SubjectSchema: Schema = new Schema({
         type: Number,
         required: true,
         min: [1, 'Los créditos deben ser al menos 1'],
-        max: [22, 'Los créditos no pueden exceder 22']
+        max: [30, 'Los créditos no pueden exceder de 30']
     },
     description: {
         type: String,
