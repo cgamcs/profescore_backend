@@ -33,6 +33,7 @@ const ReportSchema: Schema = new Schema({
   },
   subject: {
     type: Schema.Types.ObjectId,
+    ref: 'Subject',
     required: true
   },
   reasons: {

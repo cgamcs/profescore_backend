@@ -269,11 +269,12 @@ export class RatingController {
   static getAllReports = async (req: Request, res: Response) => {
     try {
       const reports = await Report.find()
-        .populate('commentId', 'general comment createdAt')
+        .populate('commentId')
         .populate('teacherId', 'name biography department')
-        .populate('subject', 'name credits') // Populate subject
+        .populate('subject', 'name credits')  // Esto debería poblar el campo subject
         .exec();
 
+      console.log('Reportes obtenidos:', reports); // Log para debug
       res.status(200).json(reports);
     } catch (error) {
       console.error('Error al obtener los reportes:', error);
@@ -352,15 +353,19 @@ export class RatingController {
 
   static rejectReport = async (req: Request, res: Response) => {
     try {
+      const { reportId } = req.params;  // Asegúrate de que aquí sea reportId, no id
+
       const report = await Report.findByIdAndUpdate(
-        req.params.id,
+        reportId,
         { status: 'rejected' },
         { new: true }
       );
+
       if (!report) {
         res.status(404).json({ message: 'Reporte no encontrado' });
-        return
+        return;
       }
+
       res.status(200).json(report);
     } catch (error) {
       console.error('Error al rechazar el reporte:', error);
