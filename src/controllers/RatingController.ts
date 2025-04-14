@@ -247,7 +247,7 @@ export class RatingController {
         commentId: rating._id,
         ratingComment: rating.comment,
         ratingDate: rating.createdAt,
-        teacherId: rating.professor,
+        professorId: rating.professor,
         subject: rating.subject,
         reasons,
         reportComment,
@@ -271,52 +271,78 @@ export class RatingController {
       const reports = await Report.find()
         .populate('commentId', 'general comment createdAt')
         .populate('teacherId', 'name biography department')
+        .populate('subject', 'name credits') // Populate subject
         .exec();
-
+  
       res.status(200).json(reports);
     } catch (error) {
       console.error('Error al obtener los reportes:', error);
       res.status(500).json({ message: 'Error al obtener los reportes' });
     }
-  }
-
+  };
+  
   static getReportById = async (req: Request, res: Response) => {
     try {
       const report = await Report.findById(req.params.id)
         .populate('commentId', 'general comment createdAt')
         .populate('teacherId', 'name biography department')
+        .populate('subject', 'name credits') // Populate subject
         .exec();
-
+  
       if (!report) {
         res.status(404).json({ message: 'Reporte no encontrado' });
-        return
+        return;
       }
-
+  
       res.status(200).json(report);
     } catch (error) {
       console.error('Error al obtener el reporte:', error);
       res.status(500).json({ message: 'Error al obtener el reporte' });
     }
-  }
+  };  
 
   static deleteReport = async (req: Request, res: Response) => {
-    console.log('Petición DELETE recibida para report ID:', req.params.id);
     try {
-      const report = await Report.findByIdAndDelete(req.params.id);
+      const { reportId } = req.params;
+      const report = await Report.findById(reportId);
       if (!report) {
-        res.status(404).json({ message: 'Reporte no encontrado' });
-        return
+        res.status(404).json({ error: 'Reporte no encontrado' });
+        return;
       }
-      res.status(204).send();
+  
+      const commentId = report.commentId;
+      const professorId = report.teacherId;
+  
+      if (!commentId || !professorId) {
+        res.status(400).json({ error: 'El reporte no contiene IDs válidos de comentario o profesor' });
+        return;
+      }
+  
+      await Rating.findByIdAndDelete(commentId);
+      report.status = 'deleted';
+      await report.save();
+      await this.updateProfessorStats(professorId.toString());
+  
+      res.status(200).json({
+        message: 'Comentario eliminado correctamente',
+        report: report
+      });
     } catch (error) {
-      console.error('Error al eliminar el reporte:', error);
-      res.status(500).json({ message: 'Error al eliminar el reporte' });
+      console.error('Error al eliminar comentario reportado:', error);
+      res.status(500).json({
+        error: 'Error al eliminar el comentario reportado',
+        details: error.message
+      });
     }
-  }
+  };
 
   static rejectReport = async (req: Request, res: Response) => {
     try {
-      const report = await Report.findByIdAndUpdate(req.params.id, { status: 'rejected' }, { new: true });
+      const report = await Report.findByIdAndUpdate(
+        req.params.id,
+        { status: 'rejected' },
+        { new: true }
+      );
       if (!report) {
         res.status(404).json({ message: 'Reporte no encontrado' });
         return

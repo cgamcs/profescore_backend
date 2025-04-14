@@ -5,7 +5,7 @@ export interface IReport extends Document {
   ratingComment: string;
   ratingDate: Date;
   teacherId: Types.ObjectId;
-  subject: string;
+  subject: Types.ObjectId;
   reasons: string[];
   reportComment?: string;
   status: 'pending' | 'rejected' | 'deleted';
@@ -32,7 +32,7 @@ const ReportSchema: Schema = new Schema({
     required: true
   },
   subject: {
-    type: String,
+    type: Schema.Types.ObjectId,
     required: true
   },
   reasons: {
