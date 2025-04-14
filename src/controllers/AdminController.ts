@@ -53,7 +53,7 @@ export class AdminController {
 
       // Creamos el payload y generamos el token (validez 1 hora)
       const payload = { id: admin._id, email: admin.email };
-      const token = jwt.sign(payload, process.env.JWT_SECRET || 'secret', { expiresIn: '3h' })
+      const token = jwt.sign(payload, process.env.JWT_SECRET || 'secret', { expiresIn: '8h' })
 
       res.json({ token })
     } catch (error) {

@@ -105,7 +105,7 @@ export class SubjectController {
             const subjects = await Subject.find()
                 .populate('department', 'name')
                 .populate('professors', 'name')
-                .populate('faculty', 'name');
+                .populate('faculty', 'abbreviation');
 
             res.json(subjects);
         } catch (error) {
