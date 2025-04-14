@@ -31,7 +31,7 @@ export class RatingController {
 
       // Convert subject IDs to strings for comparison
       const professorSubjectIds = professor.subjects.map(s => s.toString());
-      
+
       // Check if the subject is not already in the professor's subjects array
       if (!professorSubjectIds.includes(subject.toString())) {
         console.log('Añadiendo materia al profesor:', subject);
@@ -132,7 +132,7 @@ export class RatingController {
       await this.updateProfessorStats(professorId.toString());
       console.log('Estadísticas del profesor actualizadas');
 
-      res.status(200).json({ 
+      res.status(200).json({
         message: 'Comentario eliminado correctamente',
         report: report
       });
@@ -247,7 +247,7 @@ export class RatingController {
         commentId: rating._id,
         ratingComment: rating.comment,
         ratingDate: rating.createdAt,
-        professorId: rating.professor,
+        teacherId: rating.professor,
         subject: rating.subject,
         reasons,
         reportComment,
@@ -273,14 +273,14 @@ export class RatingController {
         .populate('teacherId', 'name biography department')
         .populate('subject', 'name credits') // Populate subject
         .exec();
-  
+
       res.status(200).json(reports);
     } catch (error) {
       console.error('Error al obtener los reportes:', error);
       res.status(500).json({ message: 'Error al obtener los reportes' });
     }
   };
-  
+
   static getReportById = async (req: Request, res: Response) => {
     try {
       const report = await Report.findById(req.params.id)
@@ -288,41 +288,55 @@ export class RatingController {
         .populate('teacherId', 'name biography department')
         .populate('subject', 'name credits') // Populate subject
         .exec();
-  
+
       if (!report) {
         res.status(404).json({ message: 'Reporte no encontrado' });
         return;
       }
-  
+
       res.status(200).json(report);
     } catch (error) {
       console.error('Error al obtener el reporte:', error);
       res.status(500).json({ message: 'Error al obtener el reporte' });
     }
-  };  
+  };
 
   static deleteReport = async (req: Request, res: Response) => {
     try {
       const { reportId } = req.params;
+
+      if (!reportId) {
+        res.status(400).json({ error: 'Se requiere ID del reporte' });
+        return;
+      }
+
+      // Encontrar el reporte
       const report = await Report.findById(reportId);
+
       if (!report) {
         res.status(404).json({ error: 'Reporte no encontrado' });
         return;
       }
-  
+
+      // Obtener el ID del comentario y del profesor
       const commentId = report.commentId;
       const professorId = report.teacherId;
-  
+
       if (!commentId || !professorId) {
         res.status(400).json({ error: 'El reporte no contiene IDs válidos de comentario o profesor' });
         return;
       }
-  
+
+      // Eliminar el comentario (rating)
       await Rating.findByIdAndDelete(commentId);
+
+      // Actualizar el estado del reporte a 'deleted'
       report.status = 'deleted';
       await report.save();
+
+      // Actualizar las estadísticas del profesor
       await this.updateProfessorStats(professorId.toString());
-  
+
       res.status(200).json({
         message: 'Comentario eliminado correctamente',
         report: report
@@ -334,7 +348,7 @@ export class RatingController {
         details: error.message
       });
     }
-  };
+  }
 
   static rejectReport = async (req: Request, res: Response) => {
     try {
