@@ -55,11 +55,13 @@ router.get('/:facultyId/professors/:professorId',
   ProfessorController.getProfessorById
 );
 
-router.post('/:facultyId/professors',
-  body('subject').isMongoId().withMessage('ID de materia inválido'),
+// Crear un profesor con múltiples materias
+router.post('/:facultyId/professor/multiple',
+  body('subjects').isArray().withMessage('Debe ser un arreglo de materias'),
+  body('subjects.*').isMongoId().withMessage('ID de materia inválido'),
   body('name').notEmpty().withMessage('El nombre del profesor es obligatorio'),
   handleInputErrors,
-  ProfessorController.createProfessor
+  ProfessorController.createProfessorWithMultipleSubjects
 );
 
 router.get('/:facultyId/professors/:professorId/ratings', RatingController.getProfessorRatings);
