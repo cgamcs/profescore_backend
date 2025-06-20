@@ -48,17 +48,105 @@ export class FacultyController {
     static getHomeData = async (req: Request, res: Response) => {
         try {
             const faculties = await Faculty.find({});
-            // Obtener los profesores mejor calificados
-            const professors = await Professor.find()
-                .populate('faculty', 'abbreviation')
-                .populate('subjects', 'name')
-                .populate('department', 'name')
-                .sort({ 'ratingStats.averageGeneral': -1, 'ratingStats.totalRatings': -1 })
-                .limit(3);
-
-            res.json({ faculties, topProfessors: professors });
+    
+            const topProfessors = await Professor.aggregate([
+                // Etapa 1: Filtrar profesores que tienen al menos una reseña
+                { $match: { 'ratingStats.totalRatings': { $gt: 0 } } },
+    
+                // Etapa 2: Usar $facet para realizar múltiples agregaciones en una sola etapa
+                {
+                    $facet: {
+                        // Rama 1: Calcular estadísticas globales (promedio de calificaciones y promedio de número de reseñas)
+                        "stats": [
+                            {
+                                $group: {
+                                    _id: null,
+                                    avg_rating_all: { $avg: '$ratingStats.averageGeneral' }, // C
+                                    avg_num_ratings_all: { $avg: '$ratingStats.totalRatings' } // m
+                                }
+                            }
+                        ],
+                        // Rama 2: Mantener todos los documentos de los profesores
+                        "professors": [
+                            { $match: {} } // Coincide con todos los documentos que llegan a esta etapa
+                        ]
+                    }
+                },
+    
+                // Etapa 3: Desenrollar los resultados para poder acceder a ellos
+                { $unwind: '$stats' },
+                { $unwind: '$professors' },
+    
+                // Etapa 4: Añadir las estadísticas globales a cada documento de profesor
+                {
+                    $addFields: {
+                        'professors.C': '$stats.avg_rating_all',
+                        'professors.m': '$stats.avg_num_ratings_all'
+                    }
+                },
+    
+                // Etapa 5: Reemplazar el documento raíz con el documento del profesor enriquecido
+                { $replaceRoot: { newRoot: '$professors' } },
+    
+                // Etapa 6: Calcular la calificación ponderada
+                {
+                    $addFields: {
+                        weighted_rating: {
+                            $add: [
+                                {
+                                    $multiply: [
+                                        { $divide: ['$ratingStats.totalRatings', { $add: ['$ratingStats.totalRatings', '$m'] }] },
+                                        '$ratingStats.averageGeneral'
+                                    ]
+                                },
+                                {
+                                    $multiply: [
+                                        { $divide: ['$m', { $add: ['$ratingStats.totalRatings', '$m'] }] },
+                                        '$C'
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                },
+    
+                // Etapa 7: Ordenar por la calificación ponderada y limitar a 3
+                { $sort: { weighted_rating: -1 } },
+                { $limit: 3 },
+    
+                // Etapa 8: Poblar la información de la facultad
+                {
+                    $lookup: {
+                        from: 'faculties',
+                        localField: 'faculty',
+                        foreignField: '_id',
+                        as: 'facultyInfo'
+                    }
+                },
+                {
+                    $unwind: {
+                        path: "$facultyInfo",
+                        preserveNullAndEmptyArrays: true // Preservar profesores si no se encuentra la facultad
+                    }
+                },
+    
+                // Etapa 9: Proyectar los campos finales
+                {
+                    $project: {
+                        _id: 1,
+                        name: 1,
+                        'faculty.abbreviation': '$facultyInfo.abbreviation',
+                        'faculty._id': '$facultyInfo._id',
+                        ratingStats: 1,
+                        weighted_rating: 1
+                    }
+                }
+            ]);
+    
+            res.json({ faculties, topProfessors });
         } catch (error) {
-            console.log(colors.red.bold(`Error al mostrar las facultades - ${error.message}`));
+            console.log(colors.red.bold(`Error al obtener datos de la página de inicio - ${error.message}`));
+            res.status(500).json({ message: "Error al obtener datos de la página de inicio" });
         }
     };
 
